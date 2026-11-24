@@ -64,7 +64,7 @@ export default function AreaMembro() {
 
 function EditarFicha({ p, pronto, cancelar }: { p: Pessoa; pronto: (n: Pessoa) => void; cancelar: () => void }) {
   const [d, setD] = useState({
-    telefone: p.telefone ?? '', email: p.email ?? '', nascimento: p.nascimento ?? '', cidade: p.cidade ?? '',
+    telefone: p.telefone ?? '', nascimento: p.nascimento ?? '', cidade: p.cidade ?? '',
     endereco: p.endereco ?? '', naturalidade: p.naturalidade ?? '', data_conversao: p.data_conversao ?? '', data_batismo: p.data_batismo ?? '',
     telefone_fixo: p.telefone_fixo ?? '', congregacao: p.congregacao ?? '',
   })
@@ -87,7 +87,6 @@ function EditarFicha({ p, pronto, cancelar }: { p: Pessoa; pronto: (n: Pessoa) =
         <label>Celular<input inputMode="tel" {...campo('telefone')} /></label>
         <label>Telefone residencial<input inputMode="tel" {...campo('telefone_fixo')} /></label>
       </div>
-      <label>E-mail<input type="email" {...campo('email')} /></label>
       <div className="linha-2">
         <label>Nascimento<input type="date" {...campo('nascimento')} /></label>
         <label>Cidade<input {...campo('cidade')} /></label>

@@ -42,12 +42,16 @@ export async function criarAcesso(a: NovoAcesso): Promise<ResultadoAcesso> {
     return { ok: false, erro: traduzir(error.message) }
   }
 
-  // sem sessão = o Supabase pede confirmação por e-mail; entra na equipe quando confirmar e logar
-  if (!data.session) return { ok: true, jaTinhaConta: false, pendente: true }
-
-  await avulso.rpc('aceitar_convites')
-  await avulso.auth.signOut()
-  return { ok: true, jaTinhaConta: false, pendente: false }
+  // conta nova criada pelo próprio admin: ele já coloca a pessoa na equipe
+  // (não depende do e-mail ser comprovado, porque foi o admin quem criou)
+  if (!data.user?.id) return { ok: true, jaTinhaConta: false, pendente: true }
+  const { error: eEquipe } = await supabase.from('equipe').insert({
+    igreja_id: a.igrejaId, user_id: data.user.id, nome: a.nome.trim(), papel: a.papel, pessoa_id: a.pessoaId,
+  })
+  await supabase.from('convites').delete().eq('igreja_id', a.igrejaId).eq('email', email)
+  if (data.session) await avulso.auth.signOut()
+  if (eEquipe) return { ok: false, erro: 'A conta foi criada, mas não entrou na equipe. Tente de novo.' }
+  return { ok: true, jaTinhaConta: false, pendente: !data.session }
 }
 
 function traduzir(msg: string) {

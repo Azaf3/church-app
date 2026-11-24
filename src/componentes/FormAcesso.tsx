@@ -105,7 +105,7 @@ export default function FormAcesso({ pessoa, pronto }: { pessoa?: Pessoa; pronto
         <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={google ? 'nome@gmail.com' : ''} />
       </label>
       {google
-        ? <p className="dica">Sem senha: a pessoa toca em “Entrar com Google” com esse e-mail e já entra na equipe.</p>
+        ? <p className="dica">Sem senha: a pessoa toca em “Entrar com Google” com essa conta e já entra na equipe. Por segurança, o cargo só vale entrando pelo Google.</p>
         : (
           <label>Senha
             <div className="linha-acao">
