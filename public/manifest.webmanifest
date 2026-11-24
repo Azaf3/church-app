@@ -1,9 +1,9 @@
 {
   "name": "Pastoreio",
   "short_name": "Pastoreio",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#f5f2ec",
   "theme_color": "#1f5c4c",
-  "icons": [{ "src": "/icone.svg", "sizes": "any", "type": "image/svg+xml" }]
+  "icons": [{ "src": "icone.svg", "sizes": "any", "type": "image/svg+xml" }]
 }

@@ -10,7 +10,7 @@ const Router = import.meta.env.MODE === 'demo' ? MemoryRouter : BrowserRouter
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Router>
+    <Router basename={import.meta.env.MODE === 'demo' ? undefined : import.meta.env.BASE_URL.replace(/\/$/, '')}>
       <SessaoProvider>
         <App />
       </SessaoProvider>

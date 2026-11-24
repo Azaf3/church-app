@@ -15,6 +15,7 @@ const supabaseDemo = (): Plugin => ({
 })
 
 export default defineConfig(({ mode }) => ({
+  base: mode === 'demo' ? './' : process.env.BASE_PATH || '/',
   plugins: [react(), ...(mode === 'demo' ? [supabaseDemo(), viteSingleFile()] : [])],
   build: mode === 'demo' ? { outDir: 'dist-demo' } : {},
 }))
