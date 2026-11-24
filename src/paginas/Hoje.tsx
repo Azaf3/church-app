@@ -101,6 +101,16 @@ export default function Hoje() {
         </p>
       </header>
 
+      {eu && !eu.pessoa_id && (
+        <Link to="/minha-ficha" className="painel aviso-ficha">
+          <div>
+            <strong>Falta a sua ficha de membro</strong>
+            <p className="suave">Você tem acesso à equipe, mas ainda não preencheu seus dados. Leva 2 minutos.</p>
+          </div>
+          <span className="btn btn-primario">Preencher</span>
+        </Link>
+      )}
+
       <div className="atalhos">
         {atalhos.map((a) => (
           <Link key={a.para} to={a.para} className="atalho">

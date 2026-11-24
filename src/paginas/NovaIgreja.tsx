@@ -15,8 +15,8 @@ function Logo() {
     onError={(e) => { e.currentTarget.style.display = 'none' }} />
 }
 
-function CompletarCadastro() {
-  const { recarregar, sair, session } = useSessao()
+export function CompletarCadastro({ aoTerminar }: { aoTerminar?: () => void } = {}) {
+  const { recarregar, recarregarEquipe, sair, session } = useSessao()
   const nomeGoogle = (session?.user.user_metadata?.full_name as string | undefined) ?? ''
   const [tipo, setTipo] = useState<'membro' | 'visitante'>('membro')
   const [d, setD] = useState({
@@ -53,6 +53,7 @@ function CompletarCadastro() {
       if (d.cpf.trim() || d.renda) await salvarSensiveis(minha.igreja_id, minha.pessoa_id, { cpf: v(d.cpf), renda_faixa: d.renda || null })
     }
     await recarregar()
+    if (aoTerminar) { await recarregarEquipe(); aoTerminar() }
   }
 
   return (
@@ -115,7 +116,9 @@ function CompletarCadastro() {
           {erro && <p className="erro">{erro}</p>}
           <button className="btn btn-primario" disabled={enviando}>{enviando ? 'Salvando…' : 'Enviar ficha'}</button>
         </form>
-        <p className="dica">Entrou como {session?.user.email}. <button className="link" onClick={sair}>Usar outra conta</button></p>
+        {aoTerminar
+          ? <p className="dica"><button className="link" type="button" onClick={aoTerminar}>Deixar pra depois</button></p>
+          : <p className="dica">Entrou como {session?.user.email}. <button className="link" onClick={sair}>Usar outra conta</button></p>}
       </div>
     </div>
   )

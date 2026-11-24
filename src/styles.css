@@ -573,3 +573,7 @@ body { background: var(--fundo); }
 .check input { width: auto !important; margin-top: 3px; accent-color: var(--verde); }
 .check small { display: block; color: var(--suave); font-weight: 400; }
 .protegido { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; background: var(--ambar-claro); color: #7a4f0c; padding: 1px 6px; border-radius: 99px; margin-left: 4px; }
+
+.aviso-ficha { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; border-left: 4px solid var(--ambar, #d99a2b); text-decoration: none; color: inherit; }
+.aviso-ficha p { margin: 4px 0 0; }
+.aviso-ficha .btn { flex-shrink: 0; }

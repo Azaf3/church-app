@@ -18,6 +18,7 @@ import Importar from './paginas/Importar'
 import Configuracoes from './paginas/Configuracoes'
 import Relatorios from './paginas/Relatorios'
 import AreaMembro from './paginas/AreaMembro'
+import MinhaFicha from './paginas/MinhaFicha'
 import ImportarFinanceiro from './paginas/ImportarFinanceiro'
 import Sete from './paginas/Sete'
 
@@ -46,6 +47,7 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="minha-ficha" element={<MinhaFicha />} />
       <Route element={<Layout />}>
         <Route index element={<Hoje />} />
         <Route path="pessoas" element={<Pessoas />} />
