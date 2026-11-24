@@ -45,7 +45,6 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
 
   const recarregar = useCallback(async () => {
     if (!userId) { setIgrejas([]); setCarregando(false); return }
-    setCarregando(true)
     await supabase.rpc('aceitar_convites')
     const { data } = await supabase.from('igrejas').select('*').order('nome')
     setIgrejas(data ?? [])
