@@ -13,7 +13,7 @@ function saudacao() {
 }
 
 export default function Hoje() {
-  const { igreja, userId, equipe, papel } = useSessao()
+  const { igreja, userId, equipe, papel, session } = useSessao()
   const [minhas, setMinhas] = useState<Pessoa[]>([])
   const [agenda, setAgenda] = useState<Compromisso[]>([])
   const [faltaram, setFaltaram] = useState<Pessoa[]>([])
@@ -26,6 +26,14 @@ export default function Hoje() {
 
   const eu = equipe.find((e) => e.user_id === userId)
   const fin = podeFinanceiro(papel)
+
+  // conta só de gestão (ex.: a do desenvolvedor): não pede ficha
+  const [semFicha, setSemFicha] = useState(() => session?.user.user_metadata?.sem_ficha === true)
+  async function contaTecnica(e: { preventDefault: () => void; stopPropagation: () => void }) {
+    e.preventDefault(); e.stopPropagation()
+    setSemFicha(true)
+    await supabase.auth.updateUser({ data: { sem_ficha: true } })
+  }
 
   useEffect(() => {
     if (!igreja) return
@@ -101,13 +109,16 @@ export default function Hoje() {
         </p>
       </header>
 
-      {eu && !eu.pessoa_id && (
+      {eu && !eu.pessoa_id && !semFicha && (
         <Link to="/minha-ficha" className="painel aviso-ficha">
           <div>
             <strong>Falta a sua ficha de membro</strong>
             <p className="suave">Você tem acesso à equipe, mas ainda não preencheu seus dados. Leva 2 minutos.</p>
           </div>
-          <span className="btn btn-primario">Preencher</span>
+          <div className="aviso-ficha-acoes">
+            <span className="btn btn-primario">Preencher</span>
+            <button type="button" className="link" onClick={contaTecnica}>É conta só de gestão</button>
+          </div>
         </Link>
       )}
 

@@ -577,3 +577,5 @@ body { background: var(--fundo); }
 .aviso-ficha { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; border-left: 4px solid var(--ambar, #d99a2b); text-decoration: none; color: inherit; }
 .aviso-ficha p { margin: 4px 0 0; }
 .aviso-ficha .btn { flex-shrink: 0; }
+.aviso-ficha-acoes { display: grid; gap: 6px; justify-items: center; flex-shrink: 0; }
+.aviso-ficha-acoes .link { font-size: 13px; }
