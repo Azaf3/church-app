@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { COR_PADRAO, aplicarTema } from './tema'
 import type { Igreja, MembroEquipe, Papel } from './tipos'
 
 interface Sessao {
@@ -46,7 +47,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     if (!userId) { setIgrejas([]); setCarregando(false); return }
     setCarregando(true)
     await supabase.rpc('aceitar_convites')
-    const { data } = await supabase.from('igrejas').select('id, nome, cidade').order('nome')
+    const { data } = await supabase.from('igrejas').select('*').order('nome')
     setIgrejas(data ?? [])
     setCarregando(false)
   }, [userId])
@@ -65,6 +66,8 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     if (igreja) { try { localStorage.setItem(CHAVE, igreja.id) } catch { /* sem storage */ } }
     recarregarEquipe()
   }, [recarregarEquipe])
+
+  useEffect(() => { aplicarTema(igreja?.cor ?? COR_PADRAO) }, [igreja?.cor])
 
   const papel = equipe.find((e) => e.user_id === userId)?.papel
   const nomeDe = (id: string | null) => equipe.find((e) => e.user_id === id)?.nome ?? '—'

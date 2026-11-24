@@ -2,6 +2,8 @@
 // Cliente falso do Supabase pra demonstração: dados em memória, sem servidor.
 // Só é usado no build "demo" (npm run build:demo).
 
+import logoDemo from '../assets/demo-logo.png'
+
 type Linha = Record<string, any>
 const uid = () => crypto.randomUUID()
 const agora = () => new Date().toISOString()
@@ -97,7 +99,7 @@ const contatos: Linha[] = [
 ]
 
 const db: Record<string, Linha[]> = {
-  igrejas: [{ id: IG, nome: 'Igreja Cristã Esperança', cidade: 'Gama - DF', criado_em: agora() }],
+  igrejas: [{ id: IG, nome: 'Igreja Cristã Esperança', cidade: 'Gama - DF', cor: '#2b6439', logo: logoDemo, criado_em: agora() }],
   equipe: [
     { igreja_id: IG, user_id: EU, nome: 'Pr. Marcos Vieira', papel: 'admin', pessoa_id: null },
     { igreja_id: IG, user_id: ANA, nome: 'Ana Souza', papel: 'obreiro', pessoa_id: null },

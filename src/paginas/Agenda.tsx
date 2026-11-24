@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import type { Compromisso, Pessoa } from '../lib/tipos'
@@ -16,7 +16,8 @@ export default function Agenda() {
   const [itens, setItens] = useState<Compromisso[]>([])
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
   const [so, setSo] = useState<'minha' | 'todas'>('todas')
-  const [novo, setNovo] = useState(false)
+  const [params] = useSearchParams()
+  const [novo, setNovo] = useState(params.get('novo') === '1')
 
   useEffect(() => {
     if (!igreja) return

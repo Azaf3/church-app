@@ -21,6 +21,8 @@ create table igreja.igrejas (
   id uuid primary key default gen_random_uuid(),
   nome text not null,
   cidade text,
+  cor text not null default '#1f5c4c' check (cor ~ '^#[0-9a-fA-F]{6}$'),
+  logo text check (logo is null or (logo like 'data:image/%' and length(logo) < 300000)),
   criado_em timestamptz not null default now()
 );
 

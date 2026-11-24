@@ -15,6 +15,8 @@ import Aniversariantes from './paginas/Aniversariantes'
 import Equipe from './paginas/Equipe'
 import Mais from './paginas/Mais'
 import Importar from './paginas/Importar'
+import Configuracoes from './paginas/Configuracoes'
+import Relatorios from './paginas/Relatorios'
 
 export default function App() {
   const { carregando, session, igreja } = useSessao()
@@ -51,6 +53,8 @@ export default function App() {
         <Route path="equipe" element={<Equipe />} />
         <Route path="mais" element={<Mais />} />
         <Route path="importar" element={<Importar />} />
+        <Route path="configuracoes" element={<Configuracoes />} />
+        <Route path="relatorios" element={<Relatorios />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

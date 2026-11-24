@@ -10,8 +10,12 @@ export default function Mais() {
     { para: '/presenca', nome: 'Presença no culto', icone: 'presenca' },
     ...(podeFinanceiro(papel) ? [{ para: '/financeiro', nome: 'Dízimos e ofertas', icone: 'dinheiro' }] : []),
     { para: '/aniversariantes', nome: 'Aniversariantes', icone: 'bolo' },
+    { para: '/relatorios', nome: 'Relatórios do mês', icone: 'grafico' },
     { para: '/equipe', nome: 'Equipe', icone: 'equipe' },
-    ...(podeEquipe(papel) ? [{ para: '/importar', nome: 'Importar fichas (Google Forms)', icone: 'importar' }] : []),
+    ...(podeEquipe(papel) ? [
+      { para: '/importar', nome: 'Importar fichas (Google Forms)', icone: 'importar' },
+      { para: '/configuracoes', nome: 'Configurações da igreja', icone: 'engrenagem' },
+    ] : []),
   ]
 
   return (

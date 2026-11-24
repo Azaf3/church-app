@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import type { Pessoa } from '../lib/tipos'
@@ -17,7 +17,8 @@ export default function Pessoas() {
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
   const [busca, setBusca] = useState('')
   const [filtro, setFiltro] = useState<Filtro>('todos')
-  const [novo, setNovo] = useState(false)
+  const [params] = useSearchParams()
+  const [novo, setNovo] = useState(params.get('novo') === '1')
 
   useEffect(() => {
     if (!igreja) return
