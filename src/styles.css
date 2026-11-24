@@ -394,7 +394,7 @@ body { background: var(--fundo); }
   .lateral-conta .btn-icone { color: rgba(255,255,255,.7); }
   .lateral-conta .btn-icone:hover { background: rgba(255,255,255,.1); color: #fff; }
 
-  .conteudo { max-width: 1120px; width: 100%; padding: 32px 40px 48px; margin: 0; }
+  .conteudo { max-width: 1160px; width: 100%; padding: 32px 40px 48px; margin: 0 auto; }
   .numeros { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .colunas { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
   .relatorio .colunas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -579,3 +579,11 @@ body { background: var(--fundo); }
 .aviso-ficha .btn { flex-shrink: 0; }
 .aviso-ficha-acoes { display: grid; gap: 6px; justify-items: center; flex-shrink: 0; }
 .aviso-ficha-acoes .link { font-size: 13px; }
+
+/* Meu dia: chamada em aberto e cartões sem buraco */
+.numero.pendente strong { color: var(--ambar); }
+.cartoes-hoje { display: grid; gap: 16px; align-items: start; }
+.cartoes-hoje .painel { margin: 0; }
+@media (min-width: 900px) { .cartoes-hoje { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.chamada-aberta { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.chamada-aberta p { margin: 4px 0 0; }

@@ -73,7 +73,7 @@ export default function Hoje() {
         const { data: pres } = await supabase.from('presencas').select('pessoa_id').eq('culto_id', culto.id)
         const vieram = new Set((pres ?? []).map((x: { pessoa_id: string }) => x.pessoa_id))
         setPresentes(vieram.size)
-        setFaltaram(pessoas.filter((x) => x.tipo === 'membro' && !vieram.has(x.id)))
+        setFaltaram(vieram.size > 0 ? pessoas.filter((x) => x.tipo === 'membro' && !vieram.has(x.id)) : [])
       }
 
       const dias = Array.from({ length: 7 }, (_, i) => {
@@ -91,7 +91,8 @@ export default function Hoje() {
 
   const d = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
   const hojeTexto = d.charAt(0).toUpperCase() + d.slice(1)
-  const pctPresenca = ultimoCulto && contagem.membros ? Math.round(((contagem.membros - faltaram.length) / contagem.membros) * 100) : null
+  const chamadaAberta = !!ultimoCulto && presentes === 0
+  const pctPresenca = ultimoCulto && !chamadaAberta && contagem.membros ? Math.round(((contagem.membros - faltaram.length) / contagem.membros) * 100) : null
 
   const atalhos = [
     { para: '/pessoas?novo=1', nome: 'Novo visitante', icone: 'mais_um' },
@@ -138,17 +139,17 @@ export default function Hoje() {
         <Link to="/pessoas" className="numero">
           <span>Membros</span>
           <strong>{contagem.membros}</strong>
-          <small>{contagem.novosMes > 0 ? `+${contagem.novosMes} cadastros este mês` : 'ativos'}</small>
+          <small>{contagem.novosMes > 0 && contagem.novosMes < contagem.membros + contagem.visitantes ? `+${contagem.novosMes} novos este mês` : 'ativos na igreja'}</small>
         </Link>
         <Link to="/jornada" className="numero">
           <span>Visitantes</span>
           <strong>{contagem.visitantes}</strong>
           <small>em acompanhamento</small>
         </Link>
-        <Link to="/presenca" className="numero">
+        <Link to="/presenca" className={'numero' + (chamadaAberta ? ' pendente' : '')}>
           <span>Último culto</span>
-          <strong>{ultimoCulto ? presentes : '—'}</strong>
-          <small>{ultimoCulto ? `presentes · ${dataBR(ultimoCulto.data)}` : 'nenhuma chamada ainda'}</small>
+          <strong>{ultimoCulto && !chamadaAberta ? presentes : '—'}</strong>
+          <small>{!ultimoCulto ? 'nenhuma chamada ainda' : chamadaAberta ? `chamada de ${dataBR(ultimoCulto.data)} em aberto` : `presentes · ${dataBR(ultimoCulto.data)}`}</small>
           {pctPresenca !== null && <i className="barra"><b style={{ width: `${pctPresenca}%` }} /></i>}
         </Link>
         {fin ? (
@@ -166,11 +167,20 @@ export default function Hoje() {
         )}
       </div>
 
-      <div className="colunas">
-        <div>
+      {chamadaAberta && (
+        <section className="painel chamada-aberta">
+          <div>
+            <h2>Chamada de {dataBR(ultimoCulto!.data)} em aberto</h2>
+            <p className="suave">Marque quem veio pra ver aqui quem faltou e mandar uma mensagem.</p>
+          </div>
+          <Link to="/presenca" className="btn btn-primario">Fazer chamada</Link>
+        </section>
+      )}
+
+      <div className="cartoes-hoje">
+        {minhas.length > 0 && (
           <section className="painel">
             <h2>Pra você cuidar</h2>
-            {minhas.length === 0 && <p className="vazio">Nenhuma pendência sua. Bom trabalho.</p>}
             <ul className="lista plana">
               {minhas.map((p) => {
                 const s = situacaoPrazo(p.prazo)
@@ -189,9 +199,9 @@ export default function Hoje() {
               })}
             </ul>
           </section>
-
-          {ultimoCulto && faltaram.length > 0 && (
-            <section className="painel">
+        )}
+        {ultimoCulto && faltaram.length > 0 && (
+          <section className="painel">
               <h2>Faltaram no culto de {dataBR(ultimoCulto.data)}</h2>
               <ul className="lista plana">
                 {faltaram.slice(0, 6).map((p) => (
@@ -206,11 +216,8 @@ export default function Hoje() {
               </ul>
               {faltaram.length > 6 && <Link className="link" to="/presenca">Ver todos os {faltaram.length}</Link>}
             </section>
-          )}
-        </div>
-
-        <div>
-          <section className="painel">
+        )}
+        <section className="painel">
             <h2>Hoje na agenda</h2>
             {agenda.length === 0 && <p className="vazio">Nada marcado pra hoje. <Link className="link" to="/agenda?novo=1">Marcar visita</Link></p>}
             <ul className="lista plana">
@@ -222,8 +229,7 @@ export default function Hoje() {
               ))}
             </ul>
           </section>
-
-          <section className="painel">
+        <section className="painel">
             <h2>Aniversários da semana</h2>
             {aniversarios.length === 0 && <p className="vazio">Ninguém faz aniversário nos próximos dias.</p>}
             <ul className="lista plana">
@@ -240,7 +246,6 @@ export default function Hoje() {
               })}
             </ul>
           </section>
-        </div>
       </div>
     </div>
   )
