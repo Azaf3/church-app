@@ -536,3 +536,4 @@ body { background: var(--fundo); }
 .imp-duplo strong { font-family: var(--titulo); font-size: 22px; }
 .imp-duplo small { color: var(--suave); }
 @media (max-width: 600px) { .acoes-topo .btn { padding: 9px 12px; font-size: 14px; } }
+.link-privacidade { font-size: 13px; color: var(--suave); text-decoration: underline; justify-self: center; }

@@ -68,6 +68,7 @@ export default function Login() {
         <button className="link" onClick={() => { setModo(modo === 'entrar' ? 'criar' : 'entrar'); setMsg('') }}>
             {modo === 'entrar' ? 'Primeira vez? Cadastre-se' : 'Já tenho conta'}
           </button>
+        <a className="link-privacidade" href={import.meta.env.BASE_URL + 'privacidade.html'}>Política de privacidade</a>
       </div>
     </div>
   )
