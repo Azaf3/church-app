@@ -9,7 +9,7 @@ const supabaseDemo = (): Plugin => ({
   enforce: 'pre',
   load(id) {
     if (id.replace(/\\/g, '/').endsWith('/src/lib/supabase.ts')) {
-      return "export { supabase } from './supabase-demo'\nexport const supabaseConfigurado = true"
+      return "export { supabase } from './supabase-demo'\nexport const supabaseConfigurado = true\nexport { criarClienteAvulso } from './supabase-demo'"
     }
   },
 })

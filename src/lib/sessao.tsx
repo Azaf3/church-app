@@ -14,6 +14,7 @@ interface Sessao {
   nomeDe: (userId: string | null) => string
   trocarIgreja: (id: string) => void
   recarregar: () => Promise<void>
+  recarregarEquipe: () => Promise<void>
   sair: () => Promise<void>
 }
 
@@ -54,13 +55,16 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
 
   const igreja = igrejas.find((i) => i.id === igrejaId) ?? igrejas[0] ?? null
 
-  useEffect(() => {
+  const recarregarEquipe = useCallback(async () => {
     if (!igreja) { setEquipe([]); return }
-    try { localStorage.setItem(CHAVE, igreja.id) } catch { /* sem storage */ }
-    supabase.from('equipe').select('igreja_id, user_id, nome, papel')
-      .eq('igreja_id', igreja.id).order('nome')
-      .then(({ data }) => setEquipe((data as MembroEquipe[]) ?? []))
+    const { data } = await supabase.from('equipe').select('*').eq('igreja_id', igreja.id).order('nome')
+    setEquipe((data as MembroEquipe[]) ?? [])
   }, [igreja?.id])
+
+  useEffect(() => {
+    if (igreja) { try { localStorage.setItem(CHAVE, igreja.id) } catch { /* sem storage */ } }
+    recarregarEquipe()
+  }, [recarregarEquipe])
 
   const papel = equipe.find((e) => e.user_id === userId)?.papel
   const nomeDe = (id: string | null) => equipe.find((e) => e.user_id === id)?.nome ?? '—'
@@ -70,6 +74,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     session, userId, igrejas, igreja, papel, equipe, nomeDe,
     trocarIgreja: setIgrejaId,
     recarregar,
+    recarregarEquipe,
     sair: async () => { await supabase.auth.signOut() },
   }
   return <Ctx.Provider value={valor}>{children}</Ctx.Provider>

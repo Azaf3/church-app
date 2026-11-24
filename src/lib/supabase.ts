@@ -13,3 +13,11 @@ export const supabase = createClient(
   key || 'sem-chave',
   { db: { schema: 'igreja' } },
 )
+
+// Cliente descartável pra criar o login de outra pessoa sem deslogar quem está usando
+export function criarClienteAvulso() {
+  return createClient(url, key, {
+    db: { schema: 'igreja' },
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'avulso-' + Date.now() },
+  })
+}

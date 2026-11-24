@@ -1,4 +1,8 @@
 -- =========================================================
+-- ATENÇÃO: ESTE ARQUIVO APAGA TUDO DO SCHEMA "igreja" E RECRIA.
+-- Use só na instalação nova. Banco que já tem dados: rode os
+-- arquivos de supabase/migracoes/ em vez deste.
+-- =========================================================
 -- Gestão de igrejas — schema multi-igreja
 -- Roda inteiro no SQL Editor do Supabase.
 -- Fica num schema próprio ("igreja") pra conviver com outros
@@ -26,6 +30,7 @@ create table igreja.equipe (
   user_id uuid not null references auth.users(id) on delete cascade,
   nome text not null,
   papel text not null check (papel in ('admin','pastor','tesoureiro','obreiro')),
+  pessoa_id uuid,  -- ligado a igreja.pessoas logo abaixo
   criado_em timestamptz not null default now(),
   primary key (igreja_id, user_id)
 );
@@ -36,6 +41,7 @@ create table igreja.convites (
   email text not null,
   nome text not null,
   papel text not null check (papel in ('admin','pastor','tesoureiro','obreiro')),
+  pessoa_id uuid,
   criado_em timestamptz not null default now(),
   unique (igreja_id, email)
 );
@@ -66,6 +72,9 @@ create table igreja.pessoas (
 );
 create index on igreja.pessoas (igreja_id, tipo);
 create index on igreja.pessoas (igreja_id, responsavel_id);
+alter table igreja.equipe   add foreign key (pessoa_id) references igreja.pessoas(id) on delete set null;
+alter table igreja.convites add foreign key (pessoa_id) references igreja.pessoas(id) on delete set null;
+create unique index equipe_pessoa_unica on igreja.equipe (igreja_id, pessoa_id) where pessoa_id is not null;
 
 create table igreja.contatos (
   id uuid primary key default gen_random_uuid(),
@@ -154,8 +163,8 @@ declare v_email text; v_qtd int;
 begin
   select lower(email) into v_email from auth.users where id = auth.uid();
   if v_email is null then return 0; end if;
-  insert into igreja.equipe (igreja_id, user_id, nome, papel)
-    select c.igreja_id, auth.uid(), c.nome, c.papel from igreja.convites c
+  insert into igreja.equipe (igreja_id, user_id, nome, papel, pessoa_id)
+    select c.igreja_id, auth.uid(), c.nome, c.papel, c.pessoa_id from igreja.convites c
     where lower(c.email) = v_email
   on conflict do nothing;
   get diagnostics v_qtd = row_count;

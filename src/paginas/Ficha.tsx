@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import type { Contato, Pessoa } from '../lib/tipos'
-import { ETAPAS, dataBR, iniciais, primeiroNome, situacaoPrazo } from '../lib/util'
+import { ETAPAS, PAPEIS, dataBR, iniciais, podeEquipe, primeiroNome, situacaoPrazo } from '../lib/util'
+import FormAcesso from '../componentes/FormAcesso'
 import Folha from '../componentes/Folha'
 import FormPessoa from '../componentes/FormPessoa'
 import BotaoWhats from '../componentes/BotaoWhats'
@@ -14,12 +15,13 @@ const MEIOS = { whatsapp: 'WhatsApp', ligacao: 'Ligação', visita: 'Visita', pr
 export default function Ficha() {
   const { id } = useParams()
   const navegar = useNavigate()
-  const { igreja, userId, equipe, nomeDe } = useSessao()
+  const { igreja, userId, equipe, nomeDe, papel } = useSessao()
   const [p, setP] = useState<Pessoa | null>(null)
   const [contatos, setContatos] = useState<Contato[]>([])
   const [editando, setEditando] = useState(false)
   const [registrando, setRegistrando] = useState(false)
   const [confirmando, setConfirmando] = useState(false)
+  const [dandoAcesso, setDandoAcesso] = useState(false)
 
   useEffect(() => {
     supabase.from('pessoas').select('*').eq('id', id!).single().then(({ data }) => setP(data))
@@ -30,6 +32,7 @@ export default function Ficha() {
   if (!p) return <div className="spinner" />
 
   const etapa = ETAPAS.find((e) => e.id === p.etapa)
+  const login = equipe.find((e) => e.pessoa_id === p.id)
   const prazo = situacaoPrazo(p.prazo)
 
   async function tornarMembro() {
@@ -51,6 +54,7 @@ export default function Ficha() {
         <div>
           <h1 className="titulo">{p.nome}</h1>
           <p className="suave">{p.tipo === 'membro' ? 'Membro' : 'Visitante'}{etapa && ` · ${etapa.nome}`}</p>
+          {login && <span className="tag">{PAPEIS[login.papel]} · acessa o app</span>}
         </div>
       </div>
 
@@ -97,6 +101,7 @@ export default function Ficha() {
       <div className="acoes rodape">
         <button className="btn" onClick={() => setEditando(true)}>Editar dados</button>
         {p.tipo === 'visitante' && <button className="btn" onClick={tornarMembro}>Tornar membro</button>}
+        {!login && podeEquipe(papel) && <button className="btn" onClick={() => setDandoAcesso(true)}>Dar acesso ao app</button>}
         <button className="btn btn-perigo" onClick={() => setConfirmando(true)}>Arquivar</button>
       </div>
 
@@ -106,6 +111,10 @@ export default function Ficha() {
           <button className="btn btn-perigo" onClick={arquivar}>Sim, arquivar</button>
           <button className="btn" onClick={() => setConfirmando(false)}>Cancelar</button>
         </div>
+      </Folha>
+
+      <Folha titulo={`Acesso de ${primeiroNome(p.nome)} ao app`} aberta={dandoAcesso} fechar={() => setDandoAcesso(false)}>
+        <FormAcesso pessoa={p} pronto={() => setDandoAcesso(false)} />
       </Folha>
 
       <Folha titulo="Editar" aberta={editando} fechar={() => setEditando(false)}>

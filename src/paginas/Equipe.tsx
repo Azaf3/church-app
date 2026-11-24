@@ -1,51 +1,62 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
-import type { Papel } from '../lib/tipos'
+import type { MembroEquipe, Papel } from '../lib/tipos'
 import { PAPEIS, iniciais, podeEquipe } from '../lib/util'
 import Folha from '../componentes/Folha'
+import FormAcesso, { FUNCOES } from '../componentes/FormAcesso'
 import Icone from '../componentes/Icone'
 
 interface Convite { id: string; email: string; nome: string; papel: Papel }
 
 export default function Equipe() {
-  const { igreja, equipe, papel, userId } = useSessao()
+  const { igreja, equipe, papel, userId, recarregarEquipe } = useSessao()
   const [convites, setConvites] = useState<Convite[]>([])
-  const [aberto, setAberto] = useState(false)
+  const [criando, setCriando] = useState(false)
+  const [editando, setEditando] = useState<MembroEquipe | null>(null)
   const gestor = podeEquipe(papel)
 
-  useEffect(() => {
+  function carregarConvites() {
     if (!igreja || !gestor) return
     supabase.from('convites').select('*').eq('igreja_id', igreja.id).then(({ data }) => setConvites(data ?? []))
-  }, [igreja?.id, gestor])
+  }
+  useEffect(carregarConvites, [igreja?.id, gestor])
 
   async function cancelar(id: string) {
     await supabase.from('convites').delete().eq('id', id)
     setConvites(convites.filter((c) => c.id !== id))
   }
 
+  // pastor não mexe em administrador; ninguém mexe em si mesmo
+  const podeEditar = (m: MembroEquipe) => gestor && m.user_id !== userId && (papel === 'admin' || m.papel !== 'admin')
+
   return (
     <>
       <div className="cabecalho">
         <h1 className="titulo">Equipe</h1>
-        {gestor && <button className="btn btn-primario" onClick={() => setAberto(true)}><Icone nome="mais_um" tam={18} /> Convidar</button>}
+        {gestor && <button className="btn btn-primario" onClick={() => setCriando(true)}><Icone nome="mais_um" tam={18} /> Criar login</button>}
       </div>
+      <p className="suave">Quem tem login e pode usar o app. Toque em alguém pra mudar a função.</p>
 
       <ul className="lista">
         {equipe.map((m) => (
-          <li key={m.user_id} className="item">
-            <span className="avatar">{iniciais(m.nome)}</span>
-            <div className="item-texto">
-              <strong>{m.nome}{m.user_id === userId && ' (você)'}</strong>
-              <span>{PAPEIS[m.papel]}</span>
-            </div>
+          <li key={m.user_id}>
+            <button className="item" onClick={() => podeEditar(m) && setEditando(m)} disabled={!podeEditar(m)}>
+              <span className="avatar">{iniciais(m.nome)}</span>
+              <div className="item-texto">
+                <strong>{m.nome}{m.user_id === userId && ' (você)'}</strong>
+                <span>{PAPEIS[m.papel]}{m.pessoa_id && ' · membro da igreja'}</span>
+              </div>
+              {podeEditar(m) && <Icone nome="seta" tam={18} />}
+            </button>
           </li>
         ))}
       </ul>
 
       {convites.length > 0 && (
         <>
-          <h2 className="secao">Convites pendentes</h2>
+          <h2 className="secao">Aguardando primeiro acesso</h2>
           <ul className="lista">
             {convites.map((c) => (
               <li key={c.id} className="item">
@@ -54,44 +65,64 @@ export default function Equipe() {
               </li>
             ))}
           </ul>
-          <p className="suave">A pessoa cria a conta com esse e-mail e já entra na igreja.</p>
         </>
       )}
 
-      <Folha titulo="Convidar pra equipe" aberta={aberto} fechar={() => setAberto(false)}>
-        <FormConvite igrejaId={igreja!.id} salvo={(c) => { setConvites([...convites, c]); setAberto(false) }} />
+      <Folha titulo="Criar login" aberta={criando} fechar={() => { setCriando(false); carregarConvites() }}>
+        <FormAcesso pronto={() => { setCriando(false); carregarConvites() }} />
+      </Folha>
+
+      <Folha titulo={editando?.nome ?? ''} aberta={!!editando} fechar={() => setEditando(null)}>
+        {editando && <EditarMembro m={editando} souAdmin={papel === 'admin'}
+          pronto={async () => { setEditando(null); await recarregarEquipe() }} />}
       </Folha>
     </>
   )
 }
 
-function FormConvite({ igrejaId, salvo }: { igrejaId: string; salvo: (c: Convite) => void }) {
-  const [nome, setNome] = useState('')
-  const [email, setEmail] = useState('')
-  const [papel, setPapel] = useState<Papel>('obreiro')
+function EditarMembro({ m, souAdmin, pronto }: { m: MembroEquipe; souAdmin: boolean; pronto: () => void }) {
+  const [papel, setPapel] = useState<Papel>(m.papel)
+  const [confirmar, setConfirmar] = useState(false)
   const [erro, setErro] = useState('')
 
-  async function enviar(e: FormEvent) {
-    e.preventDefault()
-    const { data, error } = await supabase.from('convites')
-      .insert({ igreja_id: igrejaId, nome, email: email.trim().toLowerCase(), papel }).select().single()
-    if (error || !data) { setErro('Esse e-mail já foi convidado ou deu erro.'); return }
-    salvo(data)
+  async function salvar() {
+    const { error } = await supabase.from('equipe').update({ papel })
+      .eq('igreja_id', m.igreja_id).eq('user_id', m.user_id)
+    if (error) { setErro('Não deu pra salvar.'); return }
+    pronto()
+  }
+
+  async function remover() {
+    const { error } = await supabase.from('equipe').delete().eq('igreja_id', m.igreja_id).eq('user_id', m.user_id)
+    if (error) { setErro('Não deu pra remover.'); return }
+    pronto()
   }
 
   return (
-    <form className="form" onSubmit={enviar}>
-      <label>Nome<input required value={nome} onChange={(e) => setNome(e.target.value)} /></label>
-      <label>E-mail<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-      <label>Função
-        <select value={papel} onChange={(e) => setPapel(e.target.value as Papel)}>
-          <option value="obreiro">Obreiro — cuida de pessoas, presença e agenda</option>
-          <option value="tesoureiro">Tesoureiro — tudo acima + financeiro</option>
-          <option value="pastor">Pastor — acesso total e gerencia a equipe</option>
-        </select>
-      </label>
+    <div className="form">
+      <fieldset className="funcoes">
+        <legend>Função</legend>
+        {FUNCOES.filter((f) => souAdmin || f.id !== 'admin').map((f) => (
+          <label key={f.id} className={'funcao' + (papel === f.id ? ' ativa' : '')}>
+            <input type="radio" name="papel-edit" checked={papel === f.id} onChange={() => setPapel(f.id)} />
+            <span><strong>{f.nome}</strong><small>{f.desc}</small></span>
+          </label>
+        ))}
+      </fieldset>
       {erro && <p className="erro">{erro}</p>}
-      <button className="btn btn-primario">Enviar convite</button>
-    </form>
+      <button className="btn btn-primario" onClick={salvar} disabled={papel === m.papel}>Salvar função</button>
+      {m.pessoa_id && <Link className="btn" to={`/pessoas/${m.pessoa_id}`}>Ver ficha de membro</Link>}
+      {!confirmar
+        ? <button className="btn btn-perigo" onClick={() => setConfirmar(true)}>Tirar acesso ao app</button>
+        : (
+          <div className="cartao">
+            <span>{m.nome} não vai mais conseguir entrar nesta igreja. A ficha de membro continua.</span>
+            <div className="acoes">
+              <button className="btn btn-perigo" onClick={remover}>Sim, tirar acesso</button>
+              <button className="btn" onClick={() => setConfirmar(false)}>Cancelar</button>
+            </div>
+          </div>
+        )}
+    </div>
   )
 }

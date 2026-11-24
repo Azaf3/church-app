@@ -99,10 +99,10 @@ const contatos: Linha[] = [
 const db: Record<string, Linha[]> = {
   igrejas: [{ id: IG, nome: 'Igreja Cristã Esperança', cidade: 'Gama - DF', criado_em: agora() }],
   equipe: [
-    { igreja_id: IG, user_id: EU, nome: 'Pr. Marcos Vieira', papel: 'admin' },
-    { igreja_id: IG, user_id: ANA, nome: 'Ana Souza', papel: 'obreiro' },
-    { igreja_id: IG, user_id: CARLOS, nome: 'Carlos Henrique', papel: 'tesoureiro' },
-    { igreja_id: IG, user_id: PAULA, nome: 'Paula Freitas', papel: 'obreiro' },
+    { igreja_id: IG, user_id: EU, nome: 'Pr. Marcos Vieira', papel: 'admin', pessoa_id: null },
+    { igreja_id: IG, user_id: ANA, nome: 'Ana Souza', papel: 'obreiro', pessoa_id: null },
+    { igreja_id: IG, user_id: CARLOS, nome: 'Carlos Henrique', papel: 'tesoureiro', pessoa_id: null },
+    { igreja_id: IG, user_id: PAULA, nome: 'Paula Freitas', papel: 'obreiro', pessoa_id: null },
   ],
   convites: [{ id: 'cv1', igreja_id: IG, email: 'diacono.jose@email.com', nome: 'José Diácono', papel: 'obreiro' }],
   pessoas, contatos, cultos, presencas, lancamentos, agenda,
@@ -113,7 +113,7 @@ const db: Record<string, Linha[]> = {
 const seedReal = (globalThis as any).__SEED_PESSOAS__ as Linha[] | undefined
 if (seedReal) {
   db.pessoas = seedReal
-  db.equipe = [{ igreja_id: IG, user_id: EU, nome: 'Pastor', papel: 'admin' }]
+  db.equipe = [{ igreja_id: IG, user_id: EU, nome: 'Pastor', papel: 'admin', pessoa_id: null }]
   db.convites = []; db.contatos = []; db.cultos = []; db.presencas = []; db.lancamentos = []; db.agenda = []
 }
 
@@ -187,6 +187,15 @@ class Consulta {
   }
 }
 
+// ---------- Convites (simula a função do banco) ----------
+function aceitarConvitesDe(user: { id: string; email: string } | null) {
+  if (!user) return 0
+  const meus = db.convites.filter((c) => c.email === user.email.toLowerCase())
+  meus.forEach((c) => db.equipe.push({ igreja_id: c.igreja_id, user_id: user.id, nome: c.nome, papel: c.papel, pessoa_id: c.pessoa_id ?? null }))
+  db.convites = db.convites.filter((c) => !meus.includes(c))
+  return meus.length
+}
+
 // ---------- Auth ----------
 let sessao: any = { user: { id: EU, email: 'pastor@esperanca.com' } }
 const ouvintes = new Set<(e: string, s: any) => void>()
@@ -201,6 +210,7 @@ export const supabase: any = {
       db.equipe.push({ igreja_id: id, user_id: sessao?.user.id, nome: args.p_meu_nome, papel: 'admin' })
       return { data: id, error: null }
     }
+    if (nome === 'aceitar_convites') return { data: aceitarConvitesDe(sessao?.user), error: null }
     return { data: 0, error: null }
   },
   auth: {
@@ -210,4 +220,22 @@ export const supabase: any = {
     signUp: async () => { sessao = { user: { id: EU, email: 'pastor@esperanca.com' } }; avisar(); return { error: null } },
     signOut: async () => { sessao = null; avisar(); return { error: null } },
   },
+}
+
+// Cliente descartável usado pra criar o login de outra pessoa
+const contas = new Set<string>(['pastor@esperanca.com'])
+export function criarClienteAvulso(): any {
+  let minha: any = null
+  return {
+    auth: {
+      signUp: async ({ email }: { email: string }) => {
+        if (contas.has(email)) return { data: {}, error: { message: 'User already registered' } }
+        contas.add(email)
+        minha = { user: { id: uid(), email } }
+        return { data: { session: minha, user: minha.user }, error: null }
+      },
+      signOut: async () => { minha = null; return { error: null } },
+    },
+    rpc: async () => ({ data: aceitarConvitesDe(minha?.user), error: null }),
+  }
 }

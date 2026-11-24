@@ -254,3 +254,17 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
 .revisao .tag { white-space: normal; text-align: left; }
 .revisao { min-width: 0; }
 .lista > li { min-width: 0; }
+
+/* Acesso / equipe */
+.linha-acao { display: flex; gap: 8px; }
+.linha-acao input { flex: 1; }
+.funcoes { border: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.funcoes legend { font-size: 13.5px; font-weight: 600; color: var(--suave); margin-bottom: 6px; }
+.funcao { display: flex !important; align-items: flex-start; gap: 10px; padding: 12px 14px; background: var(--papel); border: 1px solid var(--linha); border-radius: 12px; cursor: pointer; color: var(--tinta) !important; }
+.funcao.ativa { border-color: var(--verde); background: var(--verde-claro); }
+.funcao input { width: auto !important; margin-top: 3px; accent-color: var(--verde); }
+.funcao span { display: grid; gap: 2px; }
+.funcao small { color: var(--suave); font-weight: 400; }
+.senha { font-family: ui-monospace, monospace; font-size: 18px; letter-spacing: .04em; }
+button.item:disabled { cursor: default; opacity: 1; }
+.ficha-topo .tag { display: inline-block; margin-top: 4px; }

@@ -8,6 +8,7 @@ export interface MembroEquipe {
   user_id: string
   nome: string
   papel: Papel
+  pessoa_id: string | null
 }
 
 export interface Pessoa {
