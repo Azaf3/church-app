@@ -217,6 +217,7 @@ export const supabase: any = {
     getSession: async () => ({ data: { session: sessao } }),
     onAuthStateChange: (f: any) => { ouvintes.add(f); return { data: { subscription: { unsubscribe: () => ouvintes.delete(f) } } } },
     signInWithPassword: async () => { sessao = { user: { id: EU, email: 'pastor@esperanca.com' } }; avisar(); return { error: null } },
+    signInWithOAuth: async () => { sessao = { user: { id: EU, email: 'pastor@esperanca.com' } }; avisar(); return { error: null } },
     signUp: async () => { sessao = { user: { id: EU, email: 'pastor@esperanca.com' } }; avisar(); return { error: null } },
     signOut: async () => { sessao = null; avisar(); return { error: null } },
   },

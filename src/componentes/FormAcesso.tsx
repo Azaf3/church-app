@@ -21,9 +21,10 @@ export default function FormAcesso({ pessoa, pronto }: { pessoa?: Pessoa; pronto
   const [email, setEmail] = useState(pessoa?.email ?? '')
   const [senha, setSenha] = useState(gerarSenha)
   const [papel, setPapel] = useState<Papel>('obreiro')
+  const [google, setGoogle] = useState(true)
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
-  const [feito, setFeito] = useState<null | { pendente: boolean; jaTinhaConta: boolean; telefone: string | null }>(null)
+  const [feito, setFeito] = useState<null | { pendente: boolean; jaTinhaConta: boolean; telefone: string | null; google: boolean }>(null)
 
   useEffect(() => {
     if (!igreja || pessoa) return
@@ -43,30 +44,34 @@ export default function FormAcesso({ pessoa, pronto }: { pessoa?: Pessoa; pronto
   async function enviar(e: FormEvent) {
     e.preventDefault()
     setEnviando(true); setErro('')
-    const r = await criarAcesso({ igrejaId: igreja!.id, nome, email, senha, papel, pessoaId: pessoaId || null })
+    const r = await criarAcesso({ igrejaId: igreja!.id, nome, email, senha, papel, pessoaId: pessoaId || null, google })
     setEnviando(false)
     if (!r.ok) { setErro(r.erro); return }
     await recarregarEquipe()
-    setFeito({ pendente: r.pendente, jaTinhaConta: r.jaTinhaConta, telefone: escolhida?.telefone ?? null })
+    setFeito({ pendente: r.pendente, jaTinhaConta: r.jaTinhaConta, telefone: escolhida?.telefone ?? null, google })
   }
 
   if (feito) {
-    const msg = feito.jaTinhaConta
+    const msg = feito.google
+      ? `Oi ${primeiroNome(nome)}! Liberei seu acesso ao app da ${igreja!.nome}. Abra ${linkDoApp()} e toque em "Entrar com Google" usando a conta ${email}.`
+      : feito.jaTinhaConta
       ? `Oi ${primeiroNome(nome)}! Você agora faz parte da equipe da ${igreja!.nome} no app. Entre em ${linkDoApp()} com o seu e-mail (${email}) e a senha que você já usa.`
       : `Oi ${primeiroNome(nome)}! Criei seu acesso ao app da ${igreja!.nome}.\n\nLink: ${linkDoApp()}\nE-mail: ${email}\nSenha: ${senha}\n\nDepois de entrar, guarde essa senha.`
     return (
       <div className="form">
         <div className="cartao destaque">
-          <strong>{feito.pendente ? 'Acesso registrado' : 'Login criado'}</strong>
+          <strong>{feito.google ? 'Acesso liberado' : feito.pendente ? 'Acesso registrado' : 'Login criado'}</strong>
           <span>
-            {feito.jaTinhaConta
+            {feito.google
+              ? `Quando ${primeiroNome(nome)} entrar com a conta Google ${email}, já cai na equipe.`
+              : feito.jaTinhaConta
               ? 'Esse e-mail já tinha conta. A pessoa entra com a senha dela e já cai na equipe.'
               : feito.pendente
                 ? 'O Supabase está pedindo confirmação por e-mail: a pessoa confirma, entra e já cai na equipe.'
                 : `${primeiroNome(nome)} já está na equipe como ${FUNCOES.find((f) => f.id === papel)?.nome.toLowerCase()}.`}
           </span>
         </div>
-        {!feito.jaTinhaConta && (
+        {!feito.jaTinhaConta && !feito.google && (
           <dl className="dados">
             <div className="largo"><dt>E-mail</dt><dd>{email}</dd></div>
             <div className="largo"><dt>Senha</dt><dd className="senha">{senha}</dd></div>
@@ -91,13 +96,23 @@ export default function FormAcesso({ pessoa, pronto }: { pessoa?: Pessoa; pronto
         </label>
       )}
       <label>Nome<input required value={nome} onChange={(e) => setNome(e.target.value)} /></label>
-      <label>E-mail de login<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-      <label>Senha
-        <div className="linha-acao">
-          <input required minLength={6} value={senha} onChange={(e) => setSenha(e.target.value)} />
-          <button type="button" className="btn" onClick={() => setSenha(gerarSenha())}>Gerar outra</button>
-        </div>
+      <div className="seg">
+        <button type="button" className={google ? 'ativo' : ''} onClick={() => setGoogle(true)}>Entra com Google</button>
+        <button type="button" className={!google ? 'ativo' : ''} onClick={() => setGoogle(false)}>E-mail e senha</button>
+      </div>
+      <label>{google ? 'E-mail da conta Google' : 'E-mail de login'}
+        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={google ? 'nome@gmail.com' : ''} />
       </label>
+      {google
+        ? <p className="dica">Sem senha: a pessoa toca em “Entrar com Google” com esse e-mail e já entra na equipe.</p>
+        : (
+          <label>Senha
+            <div className="linha-acao">
+              <input required minLength={6} value={senha} onChange={(e) => setSenha(e.target.value)} />
+              <button type="button" className="btn" onClick={() => setSenha(gerarSenha())}>Gerar outra</button>
+            </div>
+          </label>
+        )}
 
       <fieldset className="funcoes">
         <legend>Função</legend>
@@ -110,7 +125,7 @@ export default function FormAcesso({ pessoa, pronto }: { pessoa?: Pessoa; pronto
       </fieldset>
 
       {erro && <p className="erro">{erro}</p>}
-      <button className="btn btn-primario" disabled={enviando}>{enviando ? 'Criando…' : 'Criar login'}</button>
+      <button className="btn btn-primario" disabled={enviando}>{enviando ? 'Salvando…' : google ? 'Liberar acesso' : 'Criar login'}</button>
     </form>
   )
 }

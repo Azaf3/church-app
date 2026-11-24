@@ -8,6 +8,7 @@ export interface NovoAcesso {
   senha: string
   papel: Papel
   pessoaId: string | null
+  google: boolean // true = entra com a conta Google, sem senha
 }
 
 export type ResultadoAcesso =
@@ -20,13 +21,16 @@ export type ResultadoAcesso =
 // 3) já entra com essa conta e aceita o convite, pra pessoa aparecer na equipe na hora
 export async function criarAcesso(a: NovoAcesso): Promise<ResultadoAcesso> {
   const email = a.email.trim().toLowerCase()
-  if (a.senha.length < 6) return { ok: false, erro: 'A senha precisa de pelo menos 6 caracteres.' }
+  if (!a.google && a.senha.length < 6) return { ok: false, erro: 'A senha precisa de pelo menos 6 caracteres.' }
 
   await supabase.from('convites').delete().eq('igreja_id', a.igrejaId).eq('email', email)
   const { error: eConvite } = await supabase.from('convites').insert({
     igreja_id: a.igrejaId, email, nome: a.nome.trim(), papel: a.papel, pessoa_id: a.pessoaId,
   })
   if (eConvite) return { ok: false, erro: 'Não deu pra registrar o acesso. Só administrador e pastor podem criar logins.' }
+
+  // com Google não cria senha: o acesso fica guardado e vale no primeiro login com essa conta
+  if (a.google) return { ok: true, jaTinhaConta: false, pendente: true }
 
   const avulso = criarClienteAvulso()
   const { data, error } = await avulso.auth.signUp({ email, password: a.senha })
