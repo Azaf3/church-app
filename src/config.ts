@@ -11,6 +11,7 @@ export const APP_SIGLA = 'ICESP'
 export const APP_ICONE = 'logos/icesp.png'
 export const APP_COR = '#2b6439'
 
-// false = só entra quem a equipe liberou (Equipe → Criar login). Sem "Criar conta" e
-// sem cadastrar igreja nova. true = aberto, pra vender como produto (cada igreja se cadastra).
-export const CADASTRO_ABERTO = false
+// false = o link não cria igreja nova: quem se cadastra entra como MEMBRO desta igreja
+// (a que tem "cadastro_aberto" no banco) e a equipe dá os cargos depois.
+// true = cada igreja nova se cadastra sozinha (pra vender como produto).
+export const NOVAS_IGREJAS = false

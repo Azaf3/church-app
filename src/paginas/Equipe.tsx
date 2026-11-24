@@ -37,22 +37,43 @@ export default function Equipe() {
         <h1 className="titulo">Equipe</h1>
         {gestor && <button className="btn btn-primario" onClick={() => setCriando(true)}><Icone nome="mais_um" tam={18} /> Criar login</button>}
       </div>
-      <p className="suave">Quem tem login e pode usar o app. Toque em alguém pra mudar a função.</p>
+      <p className="suave">Quem se cadastra pelo link entra como membro. Toque na pessoa pra dar um cargo.</p>
 
+      <h2 className="secao">Com cargo</h2>
       <ul className="lista">
-        {equipe.map((m) => (
+        {equipe.filter((m) => m.papel !== 'membro').map((m) => (
           <li key={m.user_id}>
             <button className="item" onClick={() => podeEditar(m) && setEditando(m)} disabled={!podeEditar(m)}>
               <span className="avatar">{iniciais(m.nome)}</span>
               <div className="item-texto">
                 <strong>{m.nome}{m.user_id === userId && ' (você)'}</strong>
-                <span>{PAPEIS[m.papel]}{m.pessoa_id && ' · membro da igreja'}</span>
+                <span>{PAPEIS[m.papel]}{m.papel !== 'membro' && m.pessoa_id && ' · com ficha de membro'}</span>
               </div>
               {podeEditar(m) && <Icone nome="seta" tam={18} />}
             </button>
           </li>
         ))}
       </ul>
+
+      {equipe.some((m) => m.papel === 'membro') && (
+        <>
+          <h2 className="secao">Membros com acesso ({equipe.filter((m) => m.papel === 'membro').length})</h2>
+      <ul className="lista">
+            {equipe.filter((m) => m.papel === 'membro').map((m) => (
+              <li key={m.user_id}>
+                <button className="item" onClick={() => podeEditar(m) && setEditando(m)} disabled={!podeEditar(m)}>
+                  <span className="avatar">{iniciais(m.nome)}</span>
+                  <div className="item-texto">
+                    <strong>{m.nome}{m.user_id === userId && ' (você)'}</strong>
+                    <span>{PAPEIS[m.papel]}{m.papel !== 'membro' && m.pessoa_id && ' · com ficha de membro'}</span>
+                  </div>
+                  {podeEditar(m) && <Icone nome="seta" tam={18} />}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       {convites.length > 0 && (
         <>

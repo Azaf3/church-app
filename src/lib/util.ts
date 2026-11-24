@@ -15,7 +15,11 @@ export const PAPEIS: Record<Papel, string> = {
   pastor: 'Pastor',
   tesoureiro: 'Tesoureiro',
   obreiro: 'Obreiro',
+  membro: 'Membro',
 }
+
+// equipe = quem cuida das pessoas; membro só vê a própria ficha
+export const ehEquipe = (p?: Papel) => !!p && p !== 'membro'
 
 export const podeFinanceiro = (p?: Papel) => p === 'admin' || p === 'pastor' || p === 'tesoureiro'
 export const podeEquipe = (p?: Papel) => p === 'admin' || p === 'pastor'

@@ -17,9 +17,10 @@ import Mais from './paginas/Mais'
 import Importar from './paginas/Importar'
 import Configuracoes from './paginas/Configuracoes'
 import Relatorios from './paginas/Relatorios'
+import AreaMembro from './paginas/AreaMembro'
 
 export default function App() {
-  const { carregando, session, igreja } = useSessao()
+  const { carregando, session, igreja, papel } = useSessao()
 
   if (!supabaseConfigurado) {
     return (
@@ -38,6 +39,8 @@ export default function App() {
   if (carregando) return <div className="tela-cheia"><div className="spinner" /></div>
   if (!session) return <Login />
   if (!igreja) return <NovaIgreja />
+  if (!papel) return <div className="tela-cheia"><div className="spinner" /></div>
+  if (papel === 'membro') return <AreaMembro />
 
   return (
     <Routes>

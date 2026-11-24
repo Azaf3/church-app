@@ -437,3 +437,8 @@ body { background: var(--fundo); }
 .entrada-logo { width: 72px; height: 72px; object-fit: contain; }
 .entrada-sigla { margin: 8px 0 0; font-family: var(--titulo); font-weight: 800; letter-spacing: .14em; color: var(--destaque); font-size: 14px; }
 .entrada-cartao h1 { margin-top: 2px; font-size: 26px; line-height: 1.15; }
+
+.area-membro .topo { display: flex; }
+.area-membro .conteudo { max-width: 640px; margin: 0 auto; }
+.area-membro { padding-bottom: 24px; }
+.entrada-cartao .dica .link { padding: 0; }

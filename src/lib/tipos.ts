@@ -1,4 +1,4 @@
-export type Papel = 'admin' | 'pastor' | 'tesoureiro' | 'obreiro'
+export type Papel = 'admin' | 'pastor' | 'tesoureiro' | 'obreiro' | 'membro'
 export type Etapa = 'novo' | 'relacionamento' | 'integracao' | 'membresia' | 'pequeno_grupo'
 
 export interface Igreja { id: string; nome: string; cidade: string | null; cor: string; logo: string | null }
