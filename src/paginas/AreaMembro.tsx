@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import type { Pessoa } from '../lib/tipos'
 import { dataBR, primeiroNome } from '../lib/util'
+import { ESCOLARIDADES, FAIXAS_RENDA, cpfValido, formatarCpf, lerSensiveis, salvarSensiveis, type Sensiveis } from '../lib/sensiveis'
 import LogoIgreja from '../componentes/LogoIgreja'
 import Icone from '../componentes/Icone'
 
@@ -11,11 +12,13 @@ export default function AreaMembro() {
   const { igreja, equipe, userId, sair } = useSessao()
   const eu = equipe.find((e) => e.user_id === userId)
   const [p, setP] = useState<Pessoa | null>(null)
+  const [sens, setSens] = useState<Sensiveis | null>(null)
   const [editando, setEditando] = useState(false)
 
   useEffect(() => {
     if (!eu?.pessoa_id) return
     supabase.from('pessoas').select('*').eq('id', eu.pessoa_id).single().then(({ data }) => setP(data))
+    lerSensiveis(eu.pessoa_id).then(setSens)
   }, [eu?.pessoa_id])
 
   return (
@@ -34,7 +37,7 @@ export default function AreaMembro() {
         </p>
 
         {!p ? <div className="spinner" /> : editando
-          ? <EditarFicha p={p} pronto={(n) => { setP(n); setEditando(false) }} cancelar={() => setEditando(false)} />
+          ? <EditarFicha p={p} sens={sens} igrejaId={igreja!.id} pronto={(n, s) => { setP(n); setSens(s); setEditando(false) }} cancelar={() => setEditando(false)} />
           : (
             <section className="painel">
               <h2>Minha ficha</h2>
@@ -49,6 +52,10 @@ export default function AreaMembro() {
                 <div><dt>Batismo</dt><dd>{p.data_batismo ? dataBR(p.data_batismo) : '—'}</dd></div>
                 <div><dt>Naturalidade</dt><dd>{p.naturalidade || '—'}</dd></div>
                 <div><dt>Telefone residencial</dt><dd>{p.telefone_fixo || '—'}</dd></div>
+                <div><dt>Escolaridade</dt><dd>{p.escolaridade || '—'}</dd></div>
+                <div><dt>Profissão</dt><dd>{p.profissao || '—'}</dd></div>
+                <div><dt>CPF</dt><dd>{sens?.cpf ? formatarCpf(sens.cpf) : '—'}</dd></div>
+                <div><dt>Renda mensal</dt><dd>{sens?.renda_faixa || '—'}</dd></div>
                 <div><dt>Onde congrega</dt><dd>{p.congregacao || '—'}</dd></div>
                 <div><dt>Aluno da EBD</dt><dd>{p.aluno_ebd == null ? '—' : p.aluno_ebd ? 'Sim' : 'Não'}</dd></div>
               </dl>
@@ -62,22 +69,30 @@ export default function AreaMembro() {
   )
 }
 
-function EditarFicha({ p, pronto, cancelar }: { p: Pessoa; pronto: (n: Pessoa) => void; cancelar: () => void }) {
+function EditarFicha({ p, sens, igrejaId, pronto, cancelar }: {
+  p: Pessoa; sens: Sensiveis | null; igrejaId: string; pronto: (n: Pessoa, s: Sensiveis | null) => void; cancelar: () => void
+}) {
   const [d, setD] = useState({
     telefone: p.telefone ?? '', nascimento: p.nascimento ?? '', cidade: p.cidade ?? '',
     endereco: p.endereco ?? '', naturalidade: p.naturalidade ?? '', data_conversao: p.data_conversao ?? '', data_batismo: p.data_batismo ?? '',
     telefone_fixo: p.telefone_fixo ?? '', congregacao: p.congregacao ?? '',
+    escolaridade: p.escolaridade ?? '', profissao: p.profissao ?? '',
   })
+  const [cpf, setCpf] = useState(sens?.cpf ? formatarCpf(sens.cpf) : '')
+  const [renda, setRenda] = useState(sens?.renda_faixa ?? '')
   const [ebd, setEbd] = useState<boolean | null>(p.aluno_ebd)
   const [erro, setErro] = useState('')
   const campo = (k: keyof typeof d) => ({ value: d[k], onChange: (e: { target: { value: string } }) => setD({ ...d, [k]: e.target.value }) })
 
   async function enviar(e: FormEvent) {
     e.preventDefault()
+    if (cpf.trim() && !cpfValido(cpf)) { setErro('Esse CPF não é válido.'); return }
     const limpo = { ...Object.fromEntries(Object.entries(d).map(([k, v]) => [k, v.trim() || null])), aluno_ebd: ebd }
     const { data, error } = await supabase.from('pessoas').update(limpo).eq('id', p.id).select().single()
     if (error || !data) { setErro('Não deu pra salvar.'); return }
-    pronto(data)
+    const s = { cpf: cpf.trim() || null, renda_faixa: renda || null }
+    if (s.cpf || s.renda_faixa || sens) await salvarSensiveis(igrejaId, p.id, s)
+    pronto(data, s)
   }
 
   return (
@@ -93,6 +108,24 @@ function EditarFicha({ p, pronto, cancelar }: { p: Pessoa; pronto: (n: Pessoa) =
       </div>
       <label>Endereço<input {...campo('endereco')} /></label>
       <label>Naturalidade<input {...campo('naturalidade')} /></label>
+      <div className="linha-2">
+        <label>Escolaridade
+          <select {...campo('escolaridade')}>
+            <option value="">—</option>
+            {ESCOLARIDADES.map((x) => <option key={x}>{x}</option>)}
+          </select>
+        </label>
+        <label>Profissão<input {...campo('profissao')} /></label>
+      </div>
+      <div className="linha-2">
+        <label>CPF<input inputMode="numeric" value={cpf} onChange={(e) => setCpf(e.target.value)} /></label>
+        <label>Renda mensal
+          <select value={renda} onChange={(e) => setRenda(e.target.value)}>
+            <option value="">—</option>
+            {FAIXAS_RENDA.map((x) => <option key={x}>{x}</option>)}
+          </select>
+        </label>
+      </div>
       <div className="linha-2">
         <label>Conversão<input type="date" {...campo('data_conversao')} /></label>
         <label>Batismo<input type="date" {...campo('data_batismo')} /></label>

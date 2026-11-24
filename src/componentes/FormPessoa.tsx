@@ -1,15 +1,22 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import type { Pessoa } from '../lib/tipos'
 import { ETAPAS } from '../lib/util'
+import { ESCOLARIDADES, FAIXAS_RENDA, cpfValido, formatarCpf, lerSensiveis, podeVerSensiveis, salvarSensiveis } from '../lib/sensiveis'
 
 type Dados = Partial<Pessoa>
 
 export default function FormPessoa({ inicial, tipoPadrao = 'visitante', salvo }: {
   inicial?: Pessoa; tipoPadrao?: 'membro' | 'visitante'; salvo: (p: Pessoa) => void
 }) {
-  const { igreja, equipe, userId } = useSessao()
+  const { igreja, equipe, userId, papel } = useSessao()
+  const sensivel = podeVerSensiveis(papel)
+  const [cpf, setCpf] = useState('')
+  const [renda, setRenda] = useState('')
+  useEffect(() => {
+    if (inicial && sensivel) lerSensiveis(inicial.id).then((s) => { setCpf(s?.cpf ? formatarCpf(s.cpf) : ''); setRenda(s?.renda_faixa ?? '') })
+  }, [inicial?.id, sensivel])
   const [d, setD] = useState<Dados>(inicial ?? {
     tipo: tipoPadrao,
     etapa: tipoPadrao === 'visitante' ? 'novo' : null,
@@ -27,6 +34,7 @@ export default function FormPessoa({ inicial, tipoPadrao = 'visitante', salvo }:
   async function enviar(e: FormEvent) {
     e.preventDefault()
     if (!d.nome?.trim()) { setErro('Coloque o nome.'); return }
+    if (sensivel && cpf.trim() && !cpfValido(cpf)) { setErro('Esse CPF não é válido.'); return }
     setSalvando(true); setErro('')
     const registro = {
       igreja_id: igreja!.id,
@@ -40,6 +48,8 @@ export default function FormPessoa({ inicial, tipoPadrao = 'visitante', salvo }:
       data_batismo: d.data_batismo ?? null,
       aluno_ebd: d.aluno_ebd ?? null,
       congregacao: d.congregacao ?? null,
+      escolaridade: d.escolaridade ?? null,
+      profissao: d.profissao ?? null,
       endereco: d.endereco ?? null,
       nascimento: d.nascimento ?? null,
       tipo: d.tipo ?? 'visitante',
@@ -55,6 +65,7 @@ export default function FormPessoa({ inicial, tipoPadrao = 'visitante', salvo }:
     const { data, error } = await q
     setSalvando(false)
     if (error) { setErro('Não deu pra salvar. Tente de novo.'); return }
+    if (sensivel && (cpf.trim() || renda)) await salvarSensiveis(igreja!.id, (data as Pessoa).id, { cpf: cpf.trim() || null, renda_faixa: renda || null })
     salvo(data as Pessoa)
   }
 
@@ -84,6 +95,26 @@ export default function FormPessoa({ inicial, tipoPadrao = 'visitante', salvo }:
           </div>
           <label>Naturalidade<input {...campo('naturalidade')} placeholder="Ex.: Fortaleza - CE" /></label>
           <label>Onde congrega<input {...campo('congregacao')} /></label>
+          <div className="linha-2">
+            <label>Escolaridade
+              <select {...campo('escolaridade')}>
+                <option value="">—</option>
+                {ESCOLARIDADES.map((x) => <option key={x}>{x}</option>)}
+              </select>
+            </label>
+            <label>Profissão<input {...campo('profissao')} /></label>
+          </div>
+          {sensivel && (
+            <div className="linha-2">
+              <label>CPF <small>(protegido)</small><input inputMode="numeric" value={cpf} onChange={(e) => setCpf(e.target.value)} /></label>
+              <label>Renda mensal <small>(protegido)</small>
+                <select value={renda} onChange={(e) => setRenda(e.target.value)}>
+                  <option value="">—</option>
+                  {FAIXAS_RENDA.map((x) => <option key={x}>{x}</option>)}
+                </select>
+              </label>
+            </div>
+          )}
           <div className="linha-2">
             <label>Conversão<input type="date" {...campo('data_conversao')} /></label>
             <label>Batismo<input type="date" {...campo('data_batismo')} /></label>

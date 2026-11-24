@@ -181,6 +181,8 @@ class Consulta {
       res = t.filter(casa); db[this.tabela] = t.filter((l) => !casa(l))
     } else {
       res = t.filter(casa)
+      // como a regra do banco real: só vê a igreja de que faz parte
+      if (this.tabela === 'igrejas') res = res.filter((ig) => db.equipe.some((e) => e.igreja_id === ig.id && e.user_id === sessao?.user.id))
       for (const o of [...this.ordens].reverse()) {
         res = [...res].sort((a, b) => {
           const x = a[o.k], y = b[o.k]
@@ -226,6 +228,14 @@ export const supabase: any = {
       return { data: id, error: null }
     }
     if (nome === 'aceitar_convites') return { data: aceitarConvitesDe(sessao?.user), error: null }
+    if (nome === 'auto_cadastro') {
+      const pid = uid()
+      db.pessoas.push({ id: pid, igreja_id: IG, nome: args.p_nome, telefone: args.p_telefone, email: sessao?.user.email, nascimento: args.p_nascimento,
+        endereco: args.p_endereco, cidade: args.p_cidade, naturalidade: args.p_naturalidade, tipo: args.p_tipo === 'visitante' ? 'visitante' : 'membro',
+        ativo: true, criado_em: agora() })
+      db.equipe.push({ igreja_id: IG, user_id: sessao?.user.id, nome: args.p_nome, papel: 'membro', pessoa_id: pid })
+      return { data: IG, error: null }
+    }
     return { data: 0, error: null }
   },
   auth: {
@@ -233,7 +243,7 @@ export const supabase: any = {
     onAuthStateChange: (f: any) => { ouvintes.add(f); return { data: { subscription: { unsubscribe: () => ouvintes.delete(f) } } } },
     signInWithPassword: async () => { sessao = { user: { id: EU, email: 'pastor@esperanca.com' } }; avisar(); return { error: null } },
     signInWithOAuth: async () => { sessao = { user: { id: EU, email: 'pastor@esperanca.com' } }; avisar(); return { error: null } },
-    signUp: async () => { sessao = { user: { id: EU, email: 'pastor@esperanca.com' } }; avisar(); return { error: null } },
+    signUp: async ({ email }: { email: string }) => { sessao = { user: { id: uid(), email } }; avisar(); return { error: null } },
     signOut: async () => { sessao = null; avisar(); return { error: null } },
   },
 }

@@ -551,3 +551,23 @@ body { background: var(--fundo); }
 .atalho-sete { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 14px; background: var(--verde); color: #fff; font-weight: 700; margin-bottom: 12px; }
 .atalho-sete svg:last-child { margin-left: auto; }
 .tag-fundo { font-style: normal; color: var(--verde); font-weight: 600; }
+
+/* SETE */
+.grade-sete { overflow-x: auto; margin: 0 -18px; padding: 0 18px; }
+.grade-sete table { border-collapse: separate; border-spacing: 3px; font-size: 13px; }
+.grade-sete th { font-weight: 600; color: var(--suave); padding: 4px 2px; white-space: nowrap; text-transform: capitalize; }
+.grade-sete th.agora { color: var(--verde-escuro); }
+.grade-sete .fixa { position: sticky; left: 0; background: var(--papel); z-index: 1; text-align: left; padding-right: 8px; min-width: 130px; max-width: 170px; }
+.aluno-nome { background: none; border: none; padding: 0; font: inherit; font-weight: 600; color: var(--tinta); text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; display: block; }
+.cel { width: 58px; height: 34px; border-radius: 8px; border: 1px solid var(--linha); background: var(--papel); font: inherit; font-size: 12.5px; font-variant-numeric: tabular-nums; cursor: pointer; }
+.cel.pago { background: var(--verde-claro); border-color: var(--verde-medio); color: var(--verde-escuro); font-weight: 700; }
+.cel.isento { background: #eef0f3; color: var(--suave); }
+.cel.atrasado { background: var(--alerta-claro); border-color: #efc9bf; color: var(--alerta); font-weight: 800; }
+.grade-sete td.total { text-align: center; font-weight: 700; color: var(--verde-escuro); font-size: 12.5px; }
+.lg { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 5px; vertical-align: -1px; border: 1px solid var(--linha); }
+.lg.pago { background: var(--verde-claro); } .lg.isento { background: #eef0f3; } .lg.atrasado { background: var(--alerta-claro); } .lg.aberto { background: var(--papel); }
+.legenda { flex-wrap: wrap; }
+.check { display: flex !important; gap: 10px; align-items: flex-start; color: var(--tinta) !important; font-weight: 500 !important; }
+.check input { width: auto !important; margin-top: 3px; accent-color: var(--verde); }
+.check small { display: block; color: var(--suave); font-weight: 400; }
+.protegido { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; background: var(--ambar-claro); color: #7a4f0c; padding: 1px 6px; border-radius: 99px; margin-left: 4px; }

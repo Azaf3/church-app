@@ -5,6 +5,7 @@ import { useSessao } from '../lib/sessao'
 import type { Contato, Pessoa } from '../lib/tipos'
 import { ETAPAS, PAPEIS, dataBR, iniciais, podeEquipe, primeiroNome, situacaoPrazo } from '../lib/util'
 import FormAcesso from '../componentes/FormAcesso'
+import { formatarCpf, lerSensiveis, podeVerSensiveis, type Sensiveis } from '../lib/sensiveis'
 import Folha from '../componentes/Folha'
 import FormPessoa from '../componentes/FormPessoa'
 import BotaoWhats from '../componentes/BotaoWhats'
@@ -22,12 +23,17 @@ export default function Ficha() {
   const [registrando, setRegistrando] = useState(false)
   const [confirmando, setConfirmando] = useState(false)
   const [dandoAcesso, setDandoAcesso] = useState(false)
+  const [sens, setSens] = useState<Sensiveis | null>(null)
 
   useEffect(() => {
     supabase.from('pessoas').select('*').eq('id', id!).single().then(({ data }) => setP(data))
     supabase.from('contatos').select('*').eq('pessoa_id', id!).order('criado_em', { ascending: false })
       .then(({ data }) => setContatos(data ?? []))
   }, [id])
+
+  useEffect(() => {
+    if (id && podeVerSensiveis(papel)) lerSensiveis(id).then(setSens)
+  }, [id, papel, editando])
 
   if (!p) return <div className="spinner" />
 
@@ -84,6 +90,14 @@ export default function Ficha() {
         {p.data_conversao && <div><dt>Conversão</dt><dd>{dataBR(p.data_conversao)}</dd></div>}
         {p.data_batismo && <div><dt>Batismo</dt><dd>{dataBR(p.data_batismo)}</dd></div>}
         {p.congregacao && <div><dt>Onde congrega</dt><dd>{p.congregacao}</dd></div>}
+        {p.escolaridade && <div><dt>Escolaridade</dt><dd>{p.escolaridade}</dd></div>}
+        {p.profissao && <div><dt>Profissão</dt><dd>{p.profissao}</dd></div>}
+        {podeVerSensiveis(papel) && (
+          <>
+            <div><dt>CPF <small className="protegido">protegido</small></dt><dd>{sens?.cpf ? formatarCpf(sens.cpf) : '—'}</dd></div>
+            <div><dt>Renda mensal <small className="protegido">protegido</small></dt><dd>{sens?.renda_faixa || '—'}</dd></div>
+          </>
+        )}
         {p.aluno_ebd != null && <div><dt>Aluno da EBD</dt><dd>{p.aluno_ebd ? 'Sim' : 'Não'}</dd></div>}
         {p.observacoes && <div className="largo"><dt>Observações</dt><dd>{p.observacoes}</dd></div>}
       </dl>

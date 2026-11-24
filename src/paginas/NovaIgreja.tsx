@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import { APP_ICONE, APP_NOME, NOVAS_IGREJAS } from '../config'
+import { ESCOLARIDADES, FAIXAS_RENDA, cpfValido, salvarSensiveis } from '../lib/sensiveis'
 
 // Primeiro acesso de quem ainda não está em nenhuma igreja.
 // NOVAS_IGREJAS=false: completa o cadastro e entra como membro desta igreja.
@@ -21,6 +22,7 @@ function CompletarCadastro() {
   const [d, setD] = useState({
     nome: nomeGoogle, nascimento: '', naturalidade: '', cidade: '', endereco: '',
     data_conversao: '', data_batismo: '', email: session?.user.email ?? '', telefone_fixo: '', telefone: '', congregacao: '',
+    escolaridade: '', profissao: '', cpf: '', renda: '',
   })
   const [ebd, setEbd] = useState<'' | 'sim' | 'nao'>('')
   const [erro, setErro] = useState('')
@@ -29,6 +31,7 @@ function CompletarCadastro() {
 
   async function enviar(e: FormEvent) {
     e.preventDefault()
+    if (d.cpf.trim() && !cpfValido(d.cpf)) { setErro('Esse CPF não é válido. Confira os números ou deixe em branco.'); return }
     setEnviando(true); setErro('')
     const v = (x: string) => x.trim() || null
     const { error } = await supabase.rpc('auto_cadastro', {
@@ -42,6 +45,13 @@ function CompletarCadastro() {
       setErro(/fechado/.test(error.message) ? 'O cadastro pelo site ainda não foi aberto. Fale com a secretaria.' : 'Não deu pra concluir. Confira os dados e tente de novo.')
       return
     }
+    // escolaridade/profissão na ficha; CPF e renda na tabela protegida
+    const { data: eu } = await supabase.from('equipe').select('igreja_id, pessoa_id').eq('user_id', session!.user.id).limit(1)
+    const minha = eu?.[0] as { igreja_id: string; pessoa_id: string | null } | undefined
+    if (minha?.pessoa_id) {
+      await supabase.from('pessoas').update({ escolaridade: v(d.escolaridade), profissao: v(d.profissao) }).eq('id', minha.pessoa_id)
+      if (d.cpf.trim() || d.renda) await salvarSensiveis(minha.igreja_id, minha.pessoa_id, { cpf: v(d.cpf), renda_faixa: d.renda || null })
+    }
     await recarregar()
   }
 
@@ -50,7 +60,7 @@ function CompletarCadastro() {
       <div className="entrada-cartao">
         <Logo />
         <h1>Ficha de membro</h1>
-        <p className="suave">Bem-vindo à {APP_NOME}! Preencha sua ficha. Se você já preencheu antes, a gente atualiza a mesma ficha pelo seu e-mail ou celular.</p>
+        <p className="suave">Bem-vindo à {APP_NOME}! Preencha sua ficha. Se você já tinha preenchido a ficha da igreja e entrou com a conta Google do mesmo e-mail, a gente atualiza a ficha antiga.</p>
         <form className="form" onSubmit={enviar}>
           <div className="seg">
             <button type="button" className={tipo === 'membro' ? 'ativo' : ''} onClick={() => setTipo('membro')}>Sou membro</button>
@@ -58,12 +68,31 @@ function CompletarCadastro() {
           </div>
 
           <label>Nome completo *<input required {...campo('nome')} autoComplete="name" /></label>
+          <label>Endereço (domicílio), CEP e bairro<textarea rows={2} {...campo('endereco')} autoComplete="street-address" /></label>
           <div className="linha-2">
-            <label>Data de nascimento<input type="date" {...campo('nascimento')} /></label>
+            <label>Cidade<input {...campo('cidade')} placeholder="Ex.: Gama" /></label>
             <label>Naturalidade/UF<input {...campo('naturalidade')} placeholder="Ex.: Fortaleza/CE" /></label>
           </div>
-          <label>Cidade<input {...campo('cidade')} placeholder="Ex.: Gama" /></label>
-          <label>Endereço, CEP e bairro<textarea rows={2} {...campo('endereco')} autoComplete="street-address" /></label>
+          <div className="linha-2">
+            <label>Data de nascimento<input type="date" {...campo('nascimento')} /></label>
+            <label>CPF<input inputMode="numeric" {...campo('cpf')} placeholder="000.000.000-00" /></label>
+          </div>
+          <div className="linha-2">
+            <label>Escolaridade
+              <select {...campo('escolaridade')}>
+                <option value="">Escolha</option>
+                {ESCOLARIDADES.map((x) => <option key={x}>{x}</option>)}
+              </select>
+            </label>
+            <label>Profissão<input {...campo('profissao')} /></label>
+          </div>
+          <label>Renda mensal
+            <select {...campo('renda')}>
+              <option value="">Escolha a faixa</option>
+              {FAIXAS_RENDA.map((x) => <option key={x}>{x}</option>)}
+            </select>
+          </label>
+          <p className="dica">CPF e renda são opcionais e ficam protegidos: só a administração e a tesouraria da igreja veem, para cadastro e ação social.</p>
           <div className="linha-2">
             <label>Data da conversão<input type="date" {...campo('data_conversao')} /></label>
             <label>Data do batismo<input type="date" {...campo('data_batismo')} /></label>
