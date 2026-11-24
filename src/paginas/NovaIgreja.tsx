@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
+import { APP_ICONE, APP_NOME, CADASTRO_ABERTO } from '../config'
 
 export default function NovaIgreja() {
   const { recarregar, sair, session } = useSessao()
@@ -9,6 +10,24 @@ export default function NovaIgreja() {
   const [meuNome, setMeuNome] = useState('')
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
+
+  if (!CADASTRO_ABERTO) {
+    return (
+      <div className="entrada">
+        <div className="entrada-cartao">
+          <img className="entrada-logo" src={import.meta.env.BASE_URL + APP_ICONE} alt=""
+            onError={(e) => { e.currentTarget.style.display = 'none' }} />
+          <h1>Você ainda não tem acesso</h1>
+          <p className="suave">
+            O app da {APP_NOME} é só pra equipe da igreja. Peça ao pastor ou à secretaria pra liberar
+            o e-mail <b>{session?.user.email}</b> e depois entre de novo.
+          </p>
+          <button className="btn" onClick={() => recarregar()}>Já liberaram, tentar de novo</button>
+          <button className="link" onClick={sair}>Entrar com outra conta</button>
+        </div>
+      </div>
+    )
+  }
 
   async function enviar(e: FormEvent) {
     e.preventDefault()

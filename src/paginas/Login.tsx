@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
-import { APP_ICONE, APP_NOME, APP_SIGLA } from '../config'
+import { APP_ICONE, APP_NOME, APP_SIGLA, CADASTRO_ABERTO } from '../config'
 import { linkDoApp } from '../lib/acesso'
 
 export default function Login() {
@@ -65,9 +65,13 @@ export default function Login() {
           </button>
         </form>
 
-        <button className="link" onClick={() => { setModo(modo === 'entrar' ? 'criar' : 'entrar'); setMsg('') }}>
-          {modo === 'entrar' ? 'Primeira vez? Criar conta' : 'Já tenho conta'}
-        </button>
+        {CADASTRO_ABERTO ? (
+          <button className="link" onClick={() => { setModo(modo === 'entrar' ? 'criar' : 'entrar'); setMsg('') }}>
+            {modo === 'entrar' ? 'Primeira vez? Criar conta' : 'Já tenho conta'}
+          </button>
+        ) : (
+          <p className="dica">Ainda não tem acesso? Peça ao pastor ou à secretaria da igreja pra liberar seu e-mail.</p>
+        )}
       </div>
     </div>
   )

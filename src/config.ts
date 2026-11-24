@@ -10,3 +10,7 @@ export const APP_NOME = 'Igreja Cristã Esperança'
 export const APP_SIGLA = 'ICESP'
 export const APP_ICONE = 'logos/icesp.png'
 export const APP_COR = '#2b6439'
+
+// false = só entra quem a equipe liberou (Equipe → Criar login). Sem "Criar conta" e
+// sem cadastrar igreja nova. true = aberto, pra vender como produto (cada igreja se cadastra).
+export const CADASTRO_ABERTO = false
