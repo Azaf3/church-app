@@ -131,6 +131,12 @@ if (seedReal) {
   db.convites = []; db.contatos = []; db.cultos = []; db.presencas = []; db.lancamentos = []; db.agenda = []
 }
 
+// "ver como": troca o cargo de quem está usando a demonstração
+;(globalThis as any).__demoVerComo = (papel: string) => {
+  const eu = db.equipe.find((e) => e.user_id === EU)
+  if (eu) { eu.papel = papel; eu.pessoa_id = papel === 'membro' ? db.pessoas[1]?.id ?? null : null }
+}
+
 const PADROES: Record<string, Linha> = {
   pessoas: { ativo: true, tipo: 'visitante' },
   agenda: { feito: false },

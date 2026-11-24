@@ -1,3 +1,4 @@
+import FaixaDemo from './FaixaDemo'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useSessao } from '../lib/sessao'
 import { PAPEIS, podeEquipe, podeFinanceiro, primeiroNome } from '../lib/util'
@@ -40,13 +41,7 @@ export default function Layout() {
 
   return (
     <div className="app">
-      {import.meta.env.MODE === 'demo' && (
-        <div className="faixa-demo">
-          {'__SEED_PESSOAS__' in globalThis
-            ? 'Prévia particular · membros reais, mudanças não são salvas'
-            : 'Demonstração · dados de exemplo, nada é salvo'}
-        </div>
-      )}
+      <FaixaDemo />
 
       <aside className="lateral">
         <div className="lateral-igreja">

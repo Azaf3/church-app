@@ -228,6 +228,8 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
 .spinner { width: 28px; height: 28px; margin: 40px auto; border-radius: 50%; border: 3px solid var(--linha); border-top-color: var(--verde); animation: girar .8s linear infinite; }
 @keyframes girar { to { transform: rotate(360deg); } }
 
+
+.faixa-demo select { font: inherit; padding: 1px 6px; margin-left: 4px; border-radius: 6px; border: 1px solid #d9b36a; background: #fff; color: inherit; }
 .faixa-demo { background: var(--ambar-claro); color: #7a4f0c; font-size: 12.5px; text-align: center; padding: 6px 12px; padding-top: calc(6px + env(safe-area-inset-top)); }
 
 /* Importar */

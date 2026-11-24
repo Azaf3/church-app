@@ -6,6 +6,7 @@ import { dataBR, primeiroNome } from '../lib/util'
 import { ESCOLARIDADES, FAIXAS_RENDA, cpfValido, formatarCpf, lerSensiveis, salvarSensiveis, type Sensiveis } from '../lib/sensiveis'
 import LogoIgreja from '../componentes/LogoIgreja'
 import Icone from '../componentes/Icone'
+import FaixaDemo from '../componentes/FaixaDemo'
 
 // O que um membro sem cargo vê: só a própria ficha, pra manter atualizada.
 export default function AreaMembro() {
@@ -23,6 +24,7 @@ export default function AreaMembro() {
 
   return (
     <div className="area-membro">
+      <FaixaDemo />
       <header className="topo">
         <LogoIgreja igreja={igreja} tam={28} />
         <strong>{igreja?.nome}</strong>
