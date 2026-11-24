@@ -42,7 +42,7 @@ export default function Hoje() {
         supabase.from('cultos').select('*').eq('igreja_id', id).lte('data', hoje)
           .order('data', { ascending: false }).limit(1),
         supabase.from('pessoas').select('*').eq('igreja_id', id).eq('ativo', true),
-        fin ? supabase.from('lancamentos').select('valor').eq('igreja_id', id).neq('tipo', 'saida').gte('data', `${mes}-01`).lte('data', `${mes}-31`)
+        fin ? supabase.from('lancamentos').select('valor').eq('igreja_id', id).in('tipo', ['dizimo', 'oferta', 'outro']).gte('data', `${mes}-01`).lte('data', `${mes}-31`)
           : Promise.resolve({ data: null }),
       ])
       setMinhas(p.data ?? [])

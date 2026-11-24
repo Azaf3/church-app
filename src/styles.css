@@ -537,3 +537,17 @@ body { background: var(--fundo); }
 .imp-duplo small { color: var(--suave); }
 @media (max-width: 600px) { .acoes-topo .btn { padding: 9px 12px; font-size: 14px; } }
 .link-privacidade { font-size: 13px; color: var(--suave); text-decoration: underline; justify-self: center; }
+
+.imp-saldo { margin: 4px 0 0; font-size: 14px; color: var(--suave); }
+.sel-fundo { width: auto !important; padding: 4px 6px !important; font-size: 12.5px !important; }
+
+.caixas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.caixa-aba { display: grid; gap: 2px; text-align: left; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--linha); background: var(--papel); cursor: pointer; font: inherit; }
+.caixa-aba span { font-size: 12.5px; color: var(--suave); font-weight: 600; }
+.caixa-aba strong { font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.caixa-aba.ativa { border-color: var(--verde); background: var(--verde-claro); box-shadow: inset 0 0 0 1px var(--verde); }
+@media (max-width: 600px) { .caixas { grid-template-columns: 1fr 1fr; } }
+.aviso-caixa { background: var(--ambar-claro); color: #7a4f0c; padding: 10px 14px; border-radius: 12px; font-size: 14px; margin: 0 0 12px; }
+.atalho-sete { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 14px; background: var(--verde); color: #fff; font-weight: 700; margin-bottom: 12px; }
+.atalho-sete svg:last-child { margin-left: auto; }
+.tag-fundo { font-style: normal; color: var(--verde); font-weight: 600; }

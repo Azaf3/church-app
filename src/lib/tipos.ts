@@ -49,10 +49,11 @@ export interface Culto { id: string; data: string; titulo: string }
 
 export interface Lancamento {
   id: string
-  tipo: 'dizimo' | 'oferta' | 'outro' | 'saida'
+  tipo: 'dizimo' | 'oferta' | 'outro' | 'saida' | 'saldo_inicial'
   valor: number
   categoria: string | null
   descricao: string | null
+  fundo: 'geral' | 'missoes' | 'sete'
   data: string
   pessoa_id: string | null
   nome: string | null

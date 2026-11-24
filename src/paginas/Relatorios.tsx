@@ -37,7 +37,7 @@ export default function Relatorios() {
         supabase.from('pessoas').select('*').eq('igreja_id', id),
         supabase.from('cultos').select('*').eq('igreja_id', id).gte('data', ini).lte('data', fim).order('data'),
         fin ? supabase.from('lancamentos').select('*').eq('igreja_id', id).gte('data', ini).lte('data', fim) : Promise.resolve({ data: [] }),
-        fin ? supabase.from('lancamentos').select('valor').eq('igreja_id', id).neq('tipo', 'saida').gte('data', `${mesAnt}-01`).lte('data', `${mesAnt}-31`) : Promise.resolve({ data: [] }),
+        fin ? supabase.from('lancamentos').select('valor').eq('igreja_id', id).in('tipo', ['dizimo', 'oferta', 'outro']).gte('data', `${mesAnt}-01`).lte('data', `${mesAnt}-31`) : Promise.resolve({ data: [] }),
         supabase.from('contatos').select('id').eq('igreja_id', id).gte('criado_em', iniTs).lte('criado_em', fimTs),
         supabase.from('agenda').select('id').eq('igreja_id', id).eq('feito', true).gte('inicio', iniTs).lte('inicio', fimTs),
       ])
@@ -91,7 +91,7 @@ export default function Relatorios() {
   const maiorEtapa = Math.max(1, ...porEtapa.map((e) => e.n))
 
   const soma = (t: Lancamento['tipo']) => d.lancamentos.filter((l) => l.tipo === t).reduce((s, l) => s + Number(l.valor), 0)
-  const totalMes = d.lancamentos.filter((l) => l.tipo !== 'saida').reduce((s, l) => s + Number(l.valor), 0)
+  const totalMes = d.lancamentos.filter((l) => l.tipo !== 'saida' && l.tipo !== 'saldo_inicial').reduce((s, l) => s + Number(l.valor), 0)
   const saidasMes = d.lancamentos.filter((l) => l.tipo === 'saida').reduce((s, l) => s + Number(l.valor), 0)
   const variacao = d.lancAnterior ? Math.round(((totalMes - d.lancAnterior) / d.lancAnterior) * 100) : null
   const dizimistas = new Set(d.lancamentos.filter((l) => l.tipo === 'dizimo' && l.pessoa_id).map((l) => l.pessoa_id)).size

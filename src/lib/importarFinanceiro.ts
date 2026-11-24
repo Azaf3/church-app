@@ -3,7 +3,7 @@
 // cabeçalho e podem ser corrigidas na tela antes de importar.
 
 import { lerCSV, normalizar } from './importar'
-import { adivinharCategoria } from './tesouraria'
+import { adivinharCategoria, fundoDaDescricao, type Fundo } from './tesouraria'
 
 export type Celula = string | number | boolean | Date | null
 export type Tabela = Celula[][]
@@ -139,6 +139,8 @@ export interface LinhaFin {
   tipo: 'dizimo' | 'oferta' | 'outro'
   saida: boolean
   categoria: string | null
+  fundo: Fundo
+  aba?: string
   forma: 'pix' | 'dinheiro' | 'cartao' | 'transferencia'
   nome: string
   pessoa: PessoaRef | null
@@ -153,50 +155,90 @@ export function montarLinhas(
   const pega = (r: Celula[], c?: number) => (c === undefined ? null : r[c] ?? null)
   const out: LinhaFin[] = []
   let ultimaData: string | null = null
+  // colunas de texto do lançamento (o que estiver do lado, como "Total Dízimos", não conta)
+  const colsTexto = [mapa.data, mapa.nome, mapa.descricao, mapa.tipo].filter((c) => c !== undefined) as number[]
 
   for (let i = linhaCab + 1; i < t.length; i++) {
     const r = t[i]
-    if (!r || r.every((c) => !texto(c))) continue
+    const usadas = [mapa.data, mapa.nome, mapa.descricao, mapa.tipo, mapa.valor, mapa.entrada, mapa.saida]
+      .filter((c) => c !== undefined) as number[]
+    // linha em branco nas colunas do caixa: o que vem depois não herda a data de cima
+    if (!r || usadas.every((c) => !texto(r[c] ?? null))) { ultimaData = null; continue }
     const nome = texto(pega(r, mapa.nome))
     const descricao = texto(pega(r, mapa.descricao))
     const tipoTxt = texto(pega(r, mapa.tipo))
-    // linhas de total/saldo da planilha não são lançamentos
-    if (r.some((c) => /^(total|saldo|subtotal|soma)\b/.test(normalizar(texto(c))))) continue
+    if (colsTexto.some((c) => /^(total|saldo|subtotal|soma)\b/.test(normalizar(texto(r[c] ?? null))))) continue
 
-    let valor: number | null = null
-    let saida = false
+    // valores: uma coluna só (negativo = saída) ou colunas de entrada e saída
+    const valores: { valor: number; saida: boolean }[] = []
     if (mapa.entrada !== undefined || mapa.saida !== undefined) {
       const e = lerValor(pega(r, mapa.entrada)), s = lerValor(pega(r, mapa.saida))
-      if (e && e > 0) valor = e
-      else if (s) { valor = Math.abs(s); saida = true }
+      if (e) valores.push({ valor: Math.abs(e), saida: e < 0 })
+      if (s) valores.push({ valor: Math.abs(s), saida: true })
     } else {
-      valor = lerValor(pega(r, mapa.valor))
-      if (valor !== null && valor < 0) { valor = -valor; saida = true }
+      const v = lerValor(pega(r, mapa.valor))
+      if (v) valores.push({ valor: Math.abs(v), saida: v < 0 })
     }
-    if (valor === null || valor === 0) continue
-
-    const tipoLido = lerTipo(tipoTxt, descricao)
-    if (tipoLido === 'saida') saida = true
-
-    // célula de data vazia = mesmo dia da linha de cima (comum em livro-caixa)
     const dataCel = pega(r, mapa.data)
     let data = lerData(dataCel, op.anoPadrao)
     if (!data && !texto(dataCel) && ultimaData) data = ultimaData
     if (data) ultimaData = data
+    if (!valores.length) continue
 
+    const tipoLido = lerTipo(tipoTxt, descricao)
+    const pessoa = nome ? acharPessoa(nome, pessoas) : null
     const problemas: string[] = []
     if (!data) problemas.push(texto(dataCel) ? `data "${texto(dataCel)}" não reconhecida` : 'sem data')
 
-    const pessoa = nome ? acharPessoa(nome, pessoas) : null
-    out.push({
-      n: i + 1, data, valor: Math.round(valor * 100) / 100, saida,
-      categoria: saida ? adivinharCategoria(descricao, tipoTxt, nome) : null,
-      tipo: tipoLido && tipoLido !== 'saida' ? tipoLido : op.tipoPadrao === 'auto' ? (nome ? 'dizimo' : 'oferta') : op.tipoPadrao,
-      forma: lerForma(texto(pega(r, mapa.forma))) ?? op.formaPadrao,
-      nome, pessoa, descricao, problemas,
+    valores.forEach((x, k) => {
+      const saida = x.saida || (valores.length === 1 && tipoLido === 'saida')
+      out.push({
+        n: (i + 1) + k / 10, data, valor: Math.round(x.valor * 100) / 100, saida,
+        categoria: saida ? adivinharCategoria(descricao, tipoTxt, nome) : null,
+        fundo: fundoDaDescricao(descricao, tipoTxt, nome),
+        tipo: tipoLido && tipoLido !== 'saida' ? tipoLido : op.tipoPadrao === 'auto' ? (nome ? 'dizimo' : 'oferta') : op.tipoPadrao,
+        forma: lerForma(texto(pega(r, mapa.forma))) ?? op.formaPadrao,
+        nome, pessoa: saida ? null : pessoa, descricao, problemas,
+      })
     })
   }
   return out
+}
+
+// "Saldo Anterior" que aparece no topo da aba (livro-caixa mensal)
+export function saldoAnterior(t: Tabela, linhaCab: number): number | null {
+  const cab = t[linhaCab] ?? []
+  const col = cab.findIndex((c) => /saldo anterior|saldo inicial/.test(normalizar(texto(c))))
+  if (col < 0) return null
+  for (let i = linhaCab + 1; i <= linhaCab + 3 && i < t.length; i++) {
+    const v = lerValor(t[i]?.[col] ?? null)
+    if (v !== null) return v
+  }
+  return null
+}
+
+// lê todas as abas que parecem livro-caixa (data + valor) de uma vez
+export function lerTodasAbas(
+  abas: { aba: string; tabela: Tabela }[], pessoas: PessoaRef[], anoPadrao: number,
+) {
+  const lidas = abas.map((a) => {
+    const c = acharCabecalho(a.tabela)
+    const ok = c.mapa.data !== undefined && (c.mapa.valor !== undefined || c.mapa.entrada !== undefined)
+    const linhas = ok
+      ? montarLinhas(a.tabela, c.linha, c.mapa, pessoas, { anoPadrao, tipoPadrao: 'auto', formaPadrao: 'dinheiro' })
+        .map((l) => ({ ...l, aba: a.aba, n: l.n + abas.indexOf(a) * 100000 }))
+      : []
+    const datas = linhas.map((l) => l.data).filter(Boolean).sort() as string[]
+    return { aba: a.aba, linhas, primeira: datas[0] ?? null, saldo: ok ? saldoAnterior(a.tabela, c.linha) : null }
+  }).filter((a) => a.linhas.some((l) => l.data))
+  const ordem = [...lidas].sort((a, b) => (a.primeira ?? '9').localeCompare(b.primeira ?? '9'))
+  const primeira = ordem[0]
+  return {
+    abas: ordem.map((a) => a.aba),
+    linhas: ordem.flatMap((a) => a.linhas),
+    saldoInicial: primeira && primeira.saldo !== null && primeira.primeira
+      ? { valor: primeira.saldo, data: primeira.primeira.slice(0, 8) + '01', aba: primeira.aba } : null,
+  }
 }
 
 export const chaveLancamento = (data: string, valor: number, quem: string) =>

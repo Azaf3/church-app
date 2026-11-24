@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import {
-  CAMPOS_FIN, acharCabecalho, chaveLancamento, lerArquivo, melhorAba, montarLinhas,
+  CAMPOS_FIN, acharCabecalho, chaveLancamento, lerArquivo, lerTodasAbas, montarLinhas,
   type LinhaFin, type Mapa, type PessoaRef, type Tabela,
 } from '../lib/importarFinanceiro'
-import { ENTRADAS, NOMES_CATEGORIAS, somar } from '../lib/tesouraria'
+import { ENTRADAS, FUNDOS, NOMES_CATEGORIAS, somar, type Fundo } from '../lib/tesouraria'
 import { dataBR, dinheiro, podeFinanceiro } from '../lib/util'
 import Icone from '../componentes/Icone'
 
@@ -30,6 +30,8 @@ export default function ImportarFinanceiro() {
   const [erro, setErro] = useState('')
   const [estado, setEstado] = useState<'escolher' | 'conferir' | 'importando' | 'pronto'>('escolher')
   const [importados, setImportados] = useState({ n: 0 })
+  const [modo, setModo] = useState<'todas' | 'uma'>('todas')
+  const [temSaldoInicial, setTemSaldoInicial] = useState(false)
 
   useEffect(() => {
     if (!igreja) return
@@ -37,12 +39,23 @@ export default function ImportarFinanceiro() {
       .then(({ data }) => setPessoas((data as PessoaRef[]) ?? []))
   }, [igreja?.id])
 
+  useEffect(() => {
+    if (!igreja) return
+    supabase.from('lancamentos').select('id').eq('igreja_id', igreja.id).eq('tipo', 'saldo_inicial').limit(1)
+      .then(({ data }) => setTemSaldoInicial(!!data?.length))
+  }, [igreja?.id, estado])
+
   const tabela = abas[abaAtual]?.tabela ?? []
+  // modo "todas": lê todas as abas de livro-caixa (um mês por aba) de uma vez
+  const todas = useMemo(() => lerTodasAbas(abas, pessoas, ANO), [abas, pessoas])
   const linhas: Linha[] = useMemo(
-    () => montarLinhas(tabela, linhaCab, mapa, pessoas, { anoPadrao: ANO, tipoPadrao: 'auto', formaPadrao: 'dinheiro' })
+    () => (modo === 'todas'
+      ? todas.linhas
+      : montarLinhas(tabela, linhaCab, mapa, pessoas, { anoPadrao: ANO, tipoPadrao: 'auto', formaPadrao: 'dinheiro' }))
       .map((l) => ({ ...l, ...ajustes[l.n] })),
-    [tabela, linhaCab, mapa, pessoas, ajustes],
+    [modo, todas, tabela, linhaCab, mapa, pessoas, ajustes],
   )
+  const saldoInicial = modo === 'todas' && !temSaldoInicial && todas.saldoInicial && todas.saldoInicial.valor > 0 ? todas.saldoInicial : null
 
   // o que já está lançado no período não entra de novo
   const periodo = useMemo(() => {
@@ -68,7 +81,9 @@ export default function ImportarFinanceiro() {
       const lidas = (await lerArquivo(f)).filter((a) => a.tabela.length > 1)
       if (!lidas.length) { setErro('Essa planilha está vazia.'); return }
       setArquivo(f.name); setAbas(lidas)
-      usarAba(lidas, melhorAba(lidas, ANO))
+      const auto = lerTodasAbas(lidas, pessoas, ANO)
+      setModo(auto.linhas.some((l) => l.data) ? 'todas' : 'uma')
+      usarAba(lidas, 0)
       setEstado('conferir')
     } catch (err) {
       setErro(err instanceof Error && err.message.includes('formato') ? err.message : 'Não consegui abrir esse arquivo. No Excel, use "Salvar como" .xlsx e tente de novo.')
@@ -88,7 +103,11 @@ export default function ImportarFinanceiro() {
   const saidas = vao.filter((l) => l.saida)
   const duplicados = linhas.filter((l) => ehDuplicado(l) && l.fora !== false).length
   const semData = linhas.filter((l) => !l.data).length
-  const entendeu = (mapa.valor !== undefined || mapa.entrada !== undefined) && mapa.data !== undefined && vao.length > 0
+  const entendeu = modo === 'todas'
+    ? vao.length > 0
+    : (mapa.valor !== undefined || mapa.entrada !== undefined) && mapa.data !== undefined && vao.length > 0
+  const porFundo = (f: Fundo) => vao.filter((l) => l.fundo === f)
+  const meses = modo === 'todas' ? todas.abas : []
 
   async function importar() {
     setEstado('importando'); setErro('')
@@ -99,11 +118,19 @@ export default function ImportarFinanceiro() {
       pessoa_id: l.saida ? null : l.pessoa?.id ?? null,
       nome: l.saida ? (l.nome || null) : l.pessoa ? null : (l.nome || null),
       descricao: l.descricao || null,
+      fundo: l.fundo,
     }))
+    if (saldoInicial) {
+      registros.unshift({
+        igreja_id: igreja!.id, valor: Math.round(saldoInicial.valor * 100) / 100, data: saldoInicial.data, forma: 'dinheiro',
+        criado_por: userId, tipo: 'saldo_inicial', categoria: null, pessoa_id: null, nome: null,
+        descricao: `Saldo anterior (${saldoInicial.aba.trim()})`, fundo: 'geral',
+      } as (typeof registros)[number])
+    }
     for (let i = 0; i < registros.length; i += 200) {
       const { error } = await supabase.from('lancamentos').insert(registros.slice(i, i + 200)).select('id')
       if (error) {
-        setErro(/check|tipo/.test(error.message) ? 'Falta rodar a migração 006 no Supabase pra aceitar saídas.' : 'A conexão falhou no meio. Mande a planilha de novo: o que já entrou é pulado.')
+        setErro(/check|tipo|fundo/.test(error.message) ? 'Falta rodar a migração mais nova no Supabase.' : 'A conexão falhou no meio. Mande a planilha de novo: o que já entrou é pulado.')
         setEstado('conferir'); return
       }
     }
@@ -157,19 +184,30 @@ export default function ImportarFinanceiro() {
 
       {entendeu ? (
         <section className="painel imp-resumo">
-          <p className="imp-frase">Encontrei <b>{vao.length} lançamentos</b></p>
+          <p className="imp-frase">
+            Encontrei <b>{vao.length} lançamentos</b>
+            {meses.length > 1 && <> em <b>{meses.length} meses</b> ({meses[0].trim()} a {meses[meses.length - 1].trim()})</>}
+          </p>
           <div className="imp-duplo">
             <div><span>Entradas</span><strong className="pos">{dinheiro(somar(entradas))}</strong><small>{entradas.length} lançamentos</small></div>
             <div><span>Saídas</span><strong className="neg">{dinheiro(somar(saidas))}</strong><small>{saidas.length} lançamentos</small></div>
           </div>
+          <div className="imp-chips">
+            {(Object.keys(FUNDOS) as Fundo[]).filter((f) => porFundo(f).length).map((f) => (
+              <span key={f} className="tag">{FUNDOS[f]}: {porFundo(f).length}</span>
+            ))}
+          </div>
+          {saldoInicial && (
+            <p className="imp-saldo">Saldo anterior de {saldoInicial.aba.trim()}: <b>{dinheiro(saldoInicial.valor)}</b> (entra como saldo inicial do caixa)</p>
+          )}
           {(duplicados > 0 || semData > 0) && (
             <ul className="imp-fora">
               {duplicados > 0 && <li>{duplicados} já estavam lançados e foram pulados</li>}
-              {semData > 0 && <li>{semData} {semData === 1 ? 'linha sem data ficou' : 'linhas sem data ficaram'} de fora</li>}
+              {semData > 0 && <li>{semData} {semData === 1 ? 'linha sem data ficou' : 'linhas sem data ficaram'} de fora (anotações de rodapé, como a lista de ofertas de missões)</li>}
             </ul>
           )}
           <button className="btn btn-primario btn-grande" onClick={importar} disabled={estado === 'importando'}>
-            {estado === 'importando' ? 'Importando…' : `Importar ${vao.length} lançamentos`}
+            {estado === 'importando' ? 'Importando…' : `Importar ${vao.length + (saldoInicial ? 1 : 0)} lançamentos`}
           </button>
           <button className="link" onClick={() => setRevisando(!revisando)}>{revisando ? 'Esconder a lista' : 'Ver a lista antes'}</button>
         </section>
@@ -197,6 +235,9 @@ export default function ImportarFinanceiro() {
                   <div className="linha-fin-info">
                     <div className="linha-fin-topo">
                       <span className="hora">{l.data ? dataBR(l.data) : 'sem data'}</span>
+                      <select className="sel-fundo" value={l.fundo} onChange={(e) => ajustar(l.n, { fundo: e.target.value as Fundo })}>
+                        {(Object.keys(FUNDOS) as Fundo[]).map((f) => <option key={f} value={f}>{FUNDOS[f]}</option>)}
+                      </select>
                       <strong className={'valor ' + (l.saida ? 'neg' : 'pos')}>{l.saida ? '−' : '+'} {dinheiro(l.valor!)}</strong>
                       {l.saida ? (
                         <select value={l.categoria ?? ''} onChange={(e) => ajustar(l.n, { categoria: e.target.value })}>
@@ -227,8 +268,8 @@ export default function ImportarFinanceiro() {
         </section>
       )}
 
-      <details className="painel colunas-imp" open={!entendeu}>
-        <summary><h2>{entendeu ? 'Algo errado? Ajustar colunas' : 'Qual coluna é qual'}</h2></summary>
+      <details className="painel colunas-imp" open={!entendeu} onToggle={(e) => { if ((e.target as HTMLDetailsElement).open) setModo('uma') }}>
+        <summary><h2>{entendeu ? 'Algo errado? Ajustar colunas (uma aba por vez)' : 'Qual coluna é qual'}</h2></summary>
         <div className="config-imp">
           {abas.length > 1 && (
             <label>Aba

@@ -64,6 +64,8 @@ create table igreja.pessoas (
   data_batismo date,
   aluno_ebd boolean,
   congregacao text,
+  escolaridade text,
+  profissao text,
   tipo text not null default 'visitante' check (tipo in ('membro','visitante')),
   etapa text check (etapa in ('novo','relacionamento','integracao','membresia','pequeno_grupo')),
   responsavel_id uuid references auth.users(id) on delete set null,
@@ -110,7 +112,8 @@ create table igreja.presencas (
 create table igreja.lancamentos (
   id uuid primary key default gen_random_uuid(),
   igreja_id uuid not null references igreja.igrejas(id) on delete cascade,
-  tipo text not null check (tipo in ('dizimo','oferta','outro','saida')),
+  tipo text not null check (tipo in ('dizimo','oferta','outro','saida','saldo_inicial')),
+  fundo text not null default 'geral' check (fundo in ('geral','missoes','sete')),
   categoria text,
   descricao text,
   valor numeric(12,2) not null check (valor > 0),
@@ -221,3 +224,6 @@ create policy equipe on igreja.agenda for all
 create policy financeiro on igreja.lancamentos for all
   using (igreja.tenho_papel(igreja_id, array['admin','pastor','tesoureiro']))
   with check (igreja.tenho_papel(igreja_id, array['admin','pastor','tesoureiro']));
+
+-- Instalação nova: depois deste arquivo, rode também os arquivos de supabase/migracoes/
+-- a partir do 002, em ordem (eles completam funções, segurança, SETE e dados sensíveis).

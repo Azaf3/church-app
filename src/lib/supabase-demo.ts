@@ -156,6 +156,7 @@ class Consulta {
   delete() { this.op = 'delete'; return this }
   eq(k: string, v: any) { this.filtros.push((l) => l[k] === v); return this }
   neq(k: string, v: any) { this.filtros.push((l) => l[k] !== v); return this }
+  in(k: string, vs: any[]) { this.filtros.push((l) => vs.includes(l[k])); return this }
   gte(k: string, v: any) { this.filtros.push((l) => l[k] != null && l[k] >= v); return this }
   lte(k: string, v: any) { this.filtros.push((l) => l[k] != null && l[k] <= v); return this }
   not(k: string, _op: string, _v: any) { this.filtros.push((l) => l[k] != null); return this }
