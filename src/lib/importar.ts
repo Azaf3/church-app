@@ -14,6 +14,7 @@ export interface PessoaImportada {
   data_conversao: string | null
   data_batismo: string | null
   aluno_ebd: boolean | null
+  congregacao: string | null
   observacoes: string | null
   respostas: number // quantas linhas da planilha viraram essa pessoa
   avisos: string[]
@@ -34,7 +35,7 @@ const COLUNAS: [Campo, RegExp][] = [
   ['telefone_fixo', /residencial|fixo/],
   ['telefone', /celular|whats|^telefone$|^fone$/],
   ['aluno_ebd', /ebd|escola biblica/],
-  ['local', /^local$|congregacao/],
+  ['local', /^local$|congrega/],
 ]
 
 export const normalizar = (s: string) =>
@@ -132,7 +133,7 @@ export function importar(csv: string): { pessoas: PessoaImportada[]; colunas: st
   for (const linha of linhas) {
     const p: PessoaImportada = {
       nome: '', telefone: null, telefone_fixo: null, email: null, nascimento: null, naturalidade: null,
-      cidade: null, endereco: null, data_conversao: null, data_batismo: null, aluno_ebd: null,
+      cidade: null, endereco: null, data_conversao: null, data_batismo: null, aluno_ebd: null, congregacao: null,
       observacoes: null, respostas: 1, avisos: [],
     }
     mapa.forEach((campo, i) => {
@@ -147,7 +148,7 @@ export function importar(csv: string): { pessoas: PessoaImportada[]; colunas: st
         }
         case 'aluno_ebd': { const n = normalizar(v); p.aluno_ebd = n.startsWith('s') ? true : n.startsWith('n') ? false : null; break }
         case 'email': p.email = texto(v)?.toLowerCase() ?? null; break
-        case 'local': { const t = texto(v); if (t && !/^nao$/i.test(normalizar(t))) p.observacoes = `Local: ${t}`; break }
+        case 'local': { const t = texto(v); if (t && !/^nao$/i.test(normalizar(t))) p.congregacao = t; break }
         default: p[campo] = texto(v)
       }
     })

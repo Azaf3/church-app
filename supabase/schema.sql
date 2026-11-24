@@ -63,6 +63,7 @@ create table igreja.pessoas (
   data_conversao date,
   data_batismo date,
   aluno_ebd boolean,
+  congregacao text,
   tipo text not null default 'visitante' check (tipo in ('membro','visitante')),
   etapa text check (etapa in ('novo','relacionamento','integracao','membresia','pequeno_grupo')),
   responsavel_id uuid references auth.users(id) on delete set null,

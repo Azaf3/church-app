@@ -47,6 +47,10 @@ export default function AreaMembro() {
                 <div className="largo"><dt>Endereço</dt><dd>{p.endereco || '—'}</dd></div>
                 <div><dt>Conversão</dt><dd>{p.data_conversao ? dataBR(p.data_conversao) : '—'}</dd></div>
                 <div><dt>Batismo</dt><dd>{p.data_batismo ? dataBR(p.data_batismo) : '—'}</dd></div>
+                <div><dt>Naturalidade</dt><dd>{p.naturalidade || '—'}</dd></div>
+                <div><dt>Telefone residencial</dt><dd>{p.telefone_fixo || '—'}</dd></div>
+                <div><dt>Onde congrega</dt><dd>{p.congregacao || '—'}</dd></div>
+                <div><dt>Aluno da EBD</dt><dd>{p.aluno_ebd == null ? '—' : p.aluno_ebd ? 'Sim' : 'Não'}</dd></div>
               </dl>
               <div className="acoes" style={{ marginTop: 16 }}>
                 <button className="btn btn-primario" onClick={() => setEditando(true)}>Atualizar meus dados</button>
@@ -62,13 +66,15 @@ function EditarFicha({ p, pronto, cancelar }: { p: Pessoa; pronto: (n: Pessoa) =
   const [d, setD] = useState({
     telefone: p.telefone ?? '', email: p.email ?? '', nascimento: p.nascimento ?? '', cidade: p.cidade ?? '',
     endereco: p.endereco ?? '', naturalidade: p.naturalidade ?? '', data_conversao: p.data_conversao ?? '', data_batismo: p.data_batismo ?? '',
+    telefone_fixo: p.telefone_fixo ?? '', congregacao: p.congregacao ?? '',
   })
+  const [ebd, setEbd] = useState<boolean | null>(p.aluno_ebd)
   const [erro, setErro] = useState('')
   const campo = (k: keyof typeof d) => ({ value: d[k], onChange: (e: { target: { value: string } }) => setD({ ...d, [k]: e.target.value }) })
 
   async function enviar(e: FormEvent) {
     e.preventDefault()
-    const limpo = Object.fromEntries(Object.entries(d).map(([k, v]) => [k, v.trim() || null]))
+    const limpo = { ...Object.fromEntries(Object.entries(d).map(([k, v]) => [k, v.trim() || null])), aluno_ebd: ebd }
     const { data, error } = await supabase.from('pessoas').update(limpo).eq('id', p.id).select().single()
     if (error || !data) { setErro('Não deu pra salvar.'); return }
     pronto(data)
@@ -79,8 +85,9 @@ function EditarFicha({ p, pronto, cancelar }: { p: Pessoa; pronto: (n: Pessoa) =
       <h2>Atualizar meus dados</h2>
       <div className="linha-2">
         <label>Celular<input inputMode="tel" {...campo('telefone')} /></label>
-        <label>E-mail<input type="email" {...campo('email')} /></label>
+        <label>Telefone residencial<input inputMode="tel" {...campo('telefone_fixo')} /></label>
       </div>
+      <label>E-mail<input type="email" {...campo('email')} /></label>
       <div className="linha-2">
         <label>Nascimento<input type="date" {...campo('nascimento')} /></label>
         <label>Cidade<input {...campo('cidade')} /></label>
@@ -91,6 +98,14 @@ function EditarFicha({ p, pronto, cancelar }: { p: Pessoa; pronto: (n: Pessoa) =
         <label>Conversão<input type="date" {...campo('data_conversao')} /></label>
         <label>Batismo<input type="date" {...campo('data_batismo')} /></label>
       </div>
+      <label>Onde congrega<input {...campo('congregacao')} /></label>
+      <fieldset className="pergunta">
+        <legend>Aluno da EBD?</legend>
+        <div className="seg">
+          <button type="button" className={ebd === true ? 'ativo' : ''} onClick={() => setEbd(true)}>Sim</button>
+          <button type="button" className={ebd === false ? 'ativo' : ''} onClick={() => setEbd(false)}>Não</button>
+        </div>
+      </fieldset>
       {erro && <p className="erro">{erro}</p>}
       <div className="acoes">
         <button className="btn btn-primario">Salvar</button>

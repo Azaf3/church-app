@@ -39,6 +39,7 @@ export default function FormPessoa({ inicial, tipoPadrao = 'visitante', salvo }:
       data_conversao: d.data_conversao ?? null,
       data_batismo: d.data_batismo ?? null,
       aluno_ebd: d.aluno_ebd ?? null,
+      congregacao: d.congregacao ?? null,
       endereco: d.endereco ?? null,
       nascimento: d.nascimento ?? null,
       tipo: d.tipo ?? 'visitante',
@@ -82,6 +83,7 @@ export default function FormPessoa({ inicial, tipoPadrao = 'visitante', salvo }:
             <label>Cidade<input {...campo('cidade')} /></label>
           </div>
           <label>Naturalidade<input {...campo('naturalidade')} placeholder="Ex.: Fortaleza - CE" /></label>
+          <label>Onde congrega<input {...campo('congregacao')} /></label>
           <div className="linha-2">
             <label>Conversão<input type="date" {...campo('data_conversao')} /></label>
             <label>Batismo<input type="date" {...campo('data_batismo')} /></label>

@@ -442,3 +442,9 @@ body { background: var(--fundo); }
 .area-membro .conteudo { max-width: 640px; margin: 0 auto; }
 .area-membro { padding-bottom: 24px; }
 .entrada-cartao .dica .link { padding: 0; }
+
+.pergunta { border: none; padding: 0; margin: 0; }
+.pergunta legend { font-size: 13.5px; font-weight: 600; color: var(--suave); margin-bottom: 6px; }
+.pergunta .seg { margin: 0; }
+.entrada.cadastro { align-items: start; padding-top: 40px; }
+.entrada.cadastro .entrada-cartao { max-width: 520px; }

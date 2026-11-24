@@ -25,6 +25,7 @@ export interface Pessoa {
   data_conversao: string | null
   data_batismo: string | null
   aluno_ebd: boolean | null
+  congregacao: string | null
   tipo: 'membro' | 'visitante'
   etapa: Etapa | null
   responsavel_id: string | null

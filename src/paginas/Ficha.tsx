@@ -83,6 +83,7 @@ export default function Ficha() {
         {p.naturalidade && <div><dt>Naturalidade</dt><dd>{p.naturalidade}</dd></div>}
         {p.data_conversao && <div><dt>Conversão</dt><dd>{dataBR(p.data_conversao)}</dd></div>}
         {p.data_batismo && <div><dt>Batismo</dt><dd>{dataBR(p.data_batismo)}</dd></div>}
+        {p.congregacao && <div><dt>Onde congrega</dt><dd>{p.congregacao}</dd></div>}
         {p.aluno_ebd != null && <div><dt>Aluno da EBD</dt><dd>{p.aluno_ebd ? 'Sim' : 'Não'}</dd></div>}
         {p.observacoes && <div className="largo"><dt>Observações</dt><dd>{p.observacoes}</dd></div>}
       </dl>

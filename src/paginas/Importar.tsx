@@ -51,7 +51,7 @@ export default function Importar() {
       igreja_id: igreja!.id, tipo: 'membro', nome: p.nome, telefone: p.telefone, telefone_fixo: p.telefone_fixo,
       email: p.email, nascimento: p.nascimento, naturalidade: p.naturalidade, cidade: p.cidade,
       endereco: p.endereco, data_conversao: p.data_conversao, data_batismo: p.data_batismo,
-      aluno_ebd: p.aluno_ebd, observacoes: p.observacoes,
+      aluno_ebd: p.aluno_ebd, congregacao: p.congregacao, observacoes: p.observacoes,
     }))
     const { error } = await supabase.from('pessoas').insert(lote).select()
     if (error) { setErro('Deu erro ao importar. Nada foi salvo, tente de novo.'); setEstado('revisar'); return }
