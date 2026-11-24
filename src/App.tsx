@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useSessao } from './lib/sessao'
+import { supabaseConfigurado } from './lib/supabase'
 import Layout from './componentes/Layout'
 import Login from './paginas/Login'
 import NovaIgreja from './paginas/NovaIgreja'
@@ -17,6 +18,20 @@ import Importar from './paginas/Importar'
 
 export default function App() {
   const { carregando, session, igreja } = useSessao()
+
+  if (!supabaseConfigurado) {
+    return (
+      <div className="entrada">
+        <div className="entrada-cartao">
+          <h1>Falta configurar o Supabase</h1>
+          <p className="suave">
+            Crie o arquivo <b>.env</b> na raiz do projeto (copie do <b>.env.example</b>) com
+            VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY e reinicie o <b>npm run dev</b>.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   if (carregando) return <div className="tela-cheia"><div className="spinner" /></div>
   if (!session) return <Login />
