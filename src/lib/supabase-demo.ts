@@ -1,0 +1,213 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// Cliente falso do Supabase pra demonstração: dados em memória, sem servidor.
+// Só é usado no build "demo" (npm run build:demo).
+
+type Linha = Record<string, any>
+const uid = () => crypto.randomUUID()
+const agora = () => new Date().toISOString()
+
+function dia(offset: number) {
+  const d = new Date(); d.setDate(d.getDate() + offset)
+  return d.toLocaleDateString('sv-SE')
+}
+function quando(offset: number, hora: string) {
+  return new Date(`${dia(offset)}T${hora}`).toISOString()
+}
+function niver(offsetDias: number, ano: number) {
+  return `${ano}-${dia(offsetDias).slice(5)}`
+}
+
+// ---------- Dados de exemplo ----------
+const IG = 'igreja-esperanca'
+const EU = 'u-pastor', ANA = 'u-ana', CARLOS = 'u-carlos', PAULA = 'u-paula'
+
+const nomes: [string, string, 'membro' | 'visitante', string | null, string | null, string | null, number | null][] = [
+  // nome, telefone, tipo, etapa, responsável, nascimento(ano), offset do niver
+  ['Fernanda Reis', '61991230001', 'visitante', 'novo', EU, '1994', null],
+  ['Rafael Nunes', '61991230002', 'visitante', 'novo', ANA, '1988', null],
+  ['Juliana Prado', '61991230003', 'visitante', 'novo', null, '2001', null],
+  ['Bianca Lopes', '61991230004', 'visitante', 'relacionamento', EU, '1997', 2],
+  ['Lucas Andrade', '61991230005', 'visitante', 'relacionamento', PAULA, '1990', null],
+  ['Gustavo Lima', '61991230006', 'visitante', 'integracao', EU, '1985', null],
+  ['Aline Castro', '61991230007', 'visitante', 'integracao', null, '1999', null],
+  ['Eduardo Pires', '61991230008', 'membro', 'membresia', ANA, '1979', null],
+  ['Larissa Campos', '61991230009', 'membro', 'membresia', EU, '1993', null],
+  ['Natália Rocha', '61991230010', 'membro', 'pequeno_grupo', PAULA, '1991', null],
+  ['Vinícius Moura', '61991230011', 'membro', 'pequeno_grupo', EU, '1987', null],
+  ['Dona Cida Ferreira', '61991230012', 'membro', null, null, '1952', 0],
+  ['Seu Antônio Ribeiro', '61991230013', 'membro', null, null, '1948', null],
+  ['Márcia Oliveira', '61991230014', 'membro', null, null, '1975', 5],
+  ['João Batista Souza', '61991230015', 'membro', null, null, '1982', null],
+  ['Patrícia Gomes', '61991230016', 'membro', null, null, '1989', null],
+  ['Roberto Alves', '61991230017', 'membro', null, null, '1970', null],
+  ['Sandra Mendes', '61991230018', 'membro', null, null, '1966', null],
+  ['Thiago Martins', '61991230019', 'membro', null, null, '1996', null],
+  ['Kelly Cristina', '61991230020', 'membro', null, null, '1984', null],
+]
+const ETAPA_ACAO: Record<string, string> = {
+  novo: 'Fazer o primeiro contato', relacionamento: 'Convidar pra um encontro',
+  integracao: 'Conversar sobre membresia', membresia: 'Convidar pra um pequeno grupo',
+  pequeno_grupo: 'Convidar pra servir',
+}
+const prazos = [0, 1, -2, 3, 4, -1, 6, 2, 0, 5, 7]
+
+const pessoas: Linha[] = nomes.map(([nome, tel, tipo, etapa, resp, ano, off], i) => ({
+  id: 'p' + i, igreja_id: IG, nome, telefone: tel, tipo, etapa, responsavel_id: resp,
+  endereco: `Quadra ${10 + i}, Conjunto ${String.fromCharCode(65 + (i % 6))}, Gama - DF`,
+  nascimento: off !== null ? niver(off, Number(ano)) : `${ano}-${String((i % 12) + 1).padStart(2, '0')}-${String((i * 3) % 27 + 1).padStart(2, '0')}`,
+  proximo_passo: etapa ? ETAPA_ACAO[etapa] : null,
+  prazo: etapa ? dia(prazos[i] ?? 3) : null,
+  observacoes: i === 0 ? 'Veio com a prima no culto de domingo. Mora perto da igreja.' : null,
+  ativo: true, criado_em: quando(-(30 - i), '19:00'),
+}))
+
+const cultos: Linha[] = [
+  { id: 'c1', igreja_id: IG, data: dia(-9), titulo: 'Culto de domingo', criado_em: agora() },
+  { id: 'c2', igreja_id: IG, data: dia(-2), titulo: 'Culto de domingo', criado_em: agora() },
+]
+const ausentes2 = new Set(['p12', 'p15', 'p18'])
+const presencas: Linha[] = [
+  ...pessoas.filter((p) => p.tipo === 'membro').map((p) => ({ culto_id: 'c1', pessoa_id: p.id, igreja_id: IG })),
+  ...pessoas.filter((p) => !ausentes2.has(p.id)).map((p) => ({ culto_id: 'c2', pessoa_id: p.id, igreja_id: IG })),
+]
+
+const valores = [250, 180, 320, 90, 150, 400, 120, 75, 210, 60]
+const lancamentos: Linha[] = [
+  ...valores.map((v, i) => ({
+    id: 'l' + i, igreja_id: IG, tipo: 'dizimo', valor: v, data: dia(-i * 2), pessoa_id: 'p' + (8 + i),
+    nome: null, forma: i % 3 ? 'pix' : 'dinheiro', criado_por: CARLOS, criado_em: agora(),
+  })),
+  { id: 'lo1', igreja_id: IG, tipo: 'oferta', valor: 412.5, data: dia(-2), pessoa_id: null, nome: 'Oferta do culto', forma: 'dinheiro', criado_por: CARLOS, criado_em: agora() },
+  { id: 'lo2', igreja_id: IG, tipo: 'oferta', valor: 388, data: dia(-9), pessoa_id: null, nome: 'Oferta do culto', forma: 'dinheiro', criado_por: CARLOS, criado_em: agora() },
+  { id: 'lo3', igreja_id: IG, tipo: 'oferta', valor: 50, data: dia(-4), pessoa_id: null, nome: 'Missões', forma: 'pix', criado_por: CARLOS, criado_em: agora() },
+]
+
+const agenda: Linha[] = [
+  { id: 'a1', igreja_id: IG, titulo: 'Visita · Dona Cida Ferreira', tipo: 'visita', inicio: quando(0, '15:00'), local: pessoas[11].endereco, pessoa_id: 'p11', responsavel_id: EU, feito: false },
+  { id: 'a2', igreja_id: IG, titulo: 'Culto no lar · Família Pires', tipo: 'culto_no_lar', inicio: quando(0, '20:00'), local: pessoas[7].endereco, pessoa_id: 'p7', responsavel_id: EU, feito: false },
+  { id: 'a3', igreja_id: IG, titulo: 'Aconselhamento · Gustavo Lima', tipo: 'aconselhamento', inicio: quando(1, '19:00'), local: 'Gabinete pastoral', pessoa_id: 'p5', responsavel_id: EU, feito: false },
+  { id: 'a4', igreja_id: IG, titulo: 'Reunião de obreiros', tipo: 'reuniao', inicio: quando(2, '19:30'), local: 'Salão da igreja', pessoa_id: null, responsavel_id: ANA, feito: false },
+  { id: 'a5', igreja_id: IG, titulo: 'Visita · Seu Antônio Ribeiro', tipo: 'visita', inicio: quando(3, '10:00'), local: pessoas[12].endereco, pessoa_id: 'p12', responsavel_id: PAULA, feito: false },
+].map((a) => ({ ...a, criado_em: agora() }))
+
+const contatos: Linha[] = [
+  { id: 'k1', igreja_id: IG, pessoa_id: 'p0', autor_id: EU, autor_nome: 'Pr. Marcos Vieira', meio: 'presencial', nota: 'Recebi na porta no domingo. Pediu oração pelo emprego.', criado_em: quando(-2, '21:00') },
+  { id: 'k2', igreja_id: IG, pessoa_id: 'p3', autor_id: EU, autor_nome: 'Pr. Marcos Vieira', meio: 'whatsapp', nota: 'Respondeu rápido, gostou do louvor. Vai trazer o marido.', criado_em: quando(-5, '10:00') },
+  { id: 'k3', igreja_id: IG, pessoa_id: 'p5', autor_id: EU, autor_nome: 'Pr. Marcos Vieira', meio: 'ligacao', nota: 'Quer entender o batismo. Marquei conversa.', criado_em: quando(-3, '18:00') },
+]
+
+const db: Record<string, Linha[]> = {
+  igrejas: [{ id: IG, nome: 'Igreja Cristã Esperança', cidade: 'Gama - DF', criado_em: agora() }],
+  equipe: [
+    { igreja_id: IG, user_id: EU, nome: 'Pr. Marcos Vieira', papel: 'admin' },
+    { igreja_id: IG, user_id: ANA, nome: 'Ana Souza', papel: 'obreiro' },
+    { igreja_id: IG, user_id: CARLOS, nome: 'Carlos Henrique', papel: 'tesoureiro' },
+    { igreja_id: IG, user_id: PAULA, nome: 'Paula Freitas', papel: 'obreiro' },
+  ],
+  convites: [{ id: 'cv1', igreja_id: IG, email: 'diacono.jose@email.com', nome: 'José Diácono', papel: 'obreiro' }],
+  pessoas, contatos, cultos, presencas, lancamentos, agenda,
+}
+
+// Versão particular: se a página trouxer membros reais (window.__SEED_PESSOAS__),
+// usa só eles e começa o resto vazio, sem os dados de exemplo.
+const seedReal = (globalThis as any).__SEED_PESSOAS__ as Linha[] | undefined
+if (seedReal) {
+  db.pessoas = seedReal
+  db.equipe = [{ igreja_id: IG, user_id: EU, nome: 'Pastor', papel: 'admin' }]
+  db.convites = []; db.contatos = []; db.cultos = []; db.presencas = []; db.lancamentos = []; db.agenda = []
+}
+
+const PADROES: Record<string, Linha> = {
+  pessoas: { ativo: true, tipo: 'visitante' },
+  agenda: { feito: false },
+  lancamentos: { forma: 'pix' },
+  cultos: { titulo: 'Culto' },
+  contatos: { meio: 'whatsapp' },
+}
+
+// ---------- Query builder ----------
+class Consulta {
+  private filtros: ((l: Linha) => boolean)[] = []
+  private ordens: { k: string; asc: boolean; nullsFirst: boolean }[] = []
+  private limite = 0
+  private umSo = false
+  private op: 'select' | 'insert' | 'update' | 'delete' | null = null
+  private dados: any = null
+  private tabela: string
+  constructor(tabela: string) { this.tabela = tabela }
+
+  select() { if (!this.op) this.op = 'select'; return this }
+  insert(d: any) { this.op = 'insert'; this.dados = d; return this }
+  update(d: any) { this.op = 'update'; this.dados = d; return this }
+  delete() { this.op = 'delete'; return this }
+  eq(k: string, v: any) { this.filtros.push((l) => l[k] === v); return this }
+  neq(k: string, v: any) { this.filtros.push((l) => l[k] !== v); return this }
+  gte(k: string, v: any) { this.filtros.push((l) => l[k] != null && l[k] >= v); return this }
+  lte(k: string, v: any) { this.filtros.push((l) => l[k] != null && l[k] <= v); return this }
+  not(k: string, _op: string, _v: any) { this.filtros.push((l) => l[k] != null); return this }
+  order(k: string, o: { ascending?: boolean; nullsFirst?: boolean } = {}) {
+    const asc = o.ascending ?? true
+    this.ordens.push({ k, asc, nullsFirst: o.nullsFirst ?? !asc }); return this
+  }
+  limit(n: number) { this.limite = n; return this }
+  single() { this.umSo = true; return this }
+
+  private executar() {
+    const t = (db[this.tabela] ??= [])
+    const casa = (l: Linha) => this.filtros.every((f) => f(l))
+    let res: Linha[] = []
+    if (this.op === 'insert') {
+      const lista = Array.isArray(this.dados) ? this.dados : [this.dados]
+      res = lista.map((d: Linha) => ({ id: uid(), criado_em: agora(), ...PADROES[this.tabela], ...d }))
+      t.push(...res)
+    } else if (this.op === 'update') {
+      res = t.filter(casa); res.forEach((l) => Object.assign(l, this.dados))
+    } else if (this.op === 'delete') {
+      res = t.filter(casa); db[this.tabela] = t.filter((l) => !casa(l))
+    } else {
+      res = t.filter(casa)
+      for (const o of [...this.ordens].reverse()) {
+        res = [...res].sort((a, b) => {
+          const x = a[o.k], y = b[o.k]
+          if (x == null && y == null) return 0
+          if (x == null) return o.nullsFirst ? -1 : 1
+          if (y == null) return o.nullsFirst ? 1 : -1
+          const c = x < y ? -1 : x > y ? 1 : 0
+          return o.asc ? c : -c
+        })
+      }
+      if (this.limite) res = res.slice(0, this.limite)
+    }
+    const copia = res.map((l) => ({ ...l }))
+    return { data: this.umSo ? copia[0] ?? null : copia, error: null }
+  }
+
+  then(ok: (r: any) => any, erro?: (e: any) => any) {
+    return new Promise((r) => setTimeout(r, 120)).then(() => this.executar()).then(ok, erro)
+  }
+}
+
+// ---------- Auth ----------
+let sessao: any = { user: { id: EU, email: 'pastor@esperanca.com' } }
+const ouvintes = new Set<(e: string, s: any) => void>()
+const avisar = () => ouvintes.forEach((f) => f('SIGNED_IN', sessao))
+
+export const supabase: any = {
+  from: (t: string) => new Consulta(t),
+  rpc: async (nome: string, args: any) => {
+    if (nome === 'criar_igreja') {
+      const id = uid()
+      db.igrejas.push({ id, nome: args.p_nome, cidade: args.p_cidade, criado_em: agora() })
+      db.equipe.push({ igreja_id: id, user_id: sessao?.user.id, nome: args.p_meu_nome, papel: 'admin' })
+      return { data: id, error: null }
+    }
+    return { data: 0, error: null }
+  },
+  auth: {
+    getSession: async () => ({ data: { session: sessao } }),
+    onAuthStateChange: (f: any) => { ouvintes.add(f); return { data: { subscription: { unsubscribe: () => ouvintes.delete(f) } } } },
+    signInWithPassword: async () => { sessao = { user: { id: EU, email: 'pastor@esperanca.com' } }; avisar(); return { error: null } },
+    signUp: async () => { sessao = { user: { id: EU, email: 'pastor@esperanca.com' } }; avisar(); return { error: null } },
+    signOut: async () => { sessao = null; avisar(); return { error: null } },
+  },
+}
