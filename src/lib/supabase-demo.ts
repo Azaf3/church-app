@@ -249,6 +249,7 @@ export const supabase: any = {
   },
   auth: {
     getSession: async () => ({ data: { session: sessao } }),
+    getUser: async () => ({ data: { user: sessao?.user ?? null }, error: null }),
     updateUser: async ({ data }: any) => { if (sessao) sessao.user.user_metadata = { ...(sessao.user.user_metadata ?? {}), ...data }; return { data: { user: sessao?.user }, error: null } },
     onAuthStateChange: (f: any) => { ouvintes.add(f); return { data: { subscription: { unsubscribe: () => ouvintes.delete(f) } } } },
     signInWithPassword: async () => { sessao = { user: { id: EU, email: 'pastor@esperanca.com' } }; avisar(); return { error: null } },

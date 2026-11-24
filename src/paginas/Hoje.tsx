@@ -29,6 +29,9 @@ export default function Hoje() {
 
   // conta só de gestão (ex.: a do desenvolvedor): não pede ficha
   const [semFicha, setSemFicha] = useState(() => session?.user.user_metadata?.sem_ficha === true)
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => { if (data.user?.user_metadata?.sem_ficha === true) setSemFicha(true) })
+  }, [])
   async function contaTecnica(e: { preventDefault: () => void; stopPropagation: () => void }) {
     e.preventDefault(); e.stopPropagation()
     setSemFicha(true)
