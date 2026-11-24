@@ -26,6 +26,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [authPronto, setAuthPronto] = useState(false)
   const [carregando, setCarregando] = useState(true)
+  const [carregadoPara, setCarregadoPara] = useState<string | null | undefined>(undefined)
   const [igrejas, setIgrejas] = useState<Igreja[]>([])
   const [igrejaId, setIgrejaId] = useState<string | null>(() => {
     try { return localStorage.getItem(CHAVE) } catch { return null }
@@ -44,11 +45,12 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
   const userId = session?.user.id ?? null
 
   const recarregar = useCallback(async () => {
-    if (!userId) { setIgrejas([]); setCarregando(false); return }
+    if (!userId) { setIgrejas([]); setCarregando(false); setCarregadoPara(null); return }
     await supabase.rpc('aceitar_convites')
     const { data } = await supabase.from('igrejas').select('*').order('nome')
     setIgrejas(data ?? [])
     setCarregando(false)
+    setCarregadoPara(userId)
   }, [userId])
 
   useEffect(() => { if (authPronto) recarregar() }, [authPronto, recarregar])
@@ -72,7 +74,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
   const nomeDe = (id: string | null) => equipe.find((e) => e.user_id === id)?.nome ?? '—'
 
   const valor: Sessao = {
-    carregando: !authPronto || carregando,
+    carregando: !authPronto || carregando || carregadoPara !== (userId ?? null),
     session, userId, igrejas, igreja, papel, equipe, nomeDe,
     trocarIgreja: setIgrejaId,
     recarregar,
