@@ -82,6 +82,18 @@ const lancamentos: Linha[] = [
   { id: 'lo1', igreja_id: IG, tipo: 'oferta', valor: 412.5, data: dia(-2), pessoa_id: null, nome: 'Oferta do culto', forma: 'dinheiro', criado_por: CARLOS, criado_em: agora() },
   { id: 'lo2', igreja_id: IG, tipo: 'oferta', valor: 388, data: dia(-9), pessoa_id: null, nome: 'Oferta do culto', forma: 'dinheiro', criado_por: CARLOS, criado_em: agora() },
   { id: 'lo3', igreja_id: IG, tipo: 'oferta', valor: 50, data: dia(-4), pessoa_id: null, nome: 'Missões', forma: 'pix', criado_por: CARLOS, criado_em: agora() },
+  ...([
+    [-3, 189.9, 'Água, luz e internet', 'Conta de luz'], [-5, 850, 'Aluguel', 'Aluguel do salão'], [-8, 120, 'Limpeza e copa', 'Produtos de limpeza'],
+    [-12, 300, 'Prebenda e ajudas', 'Ajuda de custo do obreiro'], [-15, 95.5, 'Água, luz e internet', 'Internet'], [-20, 210, 'Manutenção e reforma', 'Conserto do ventilador'],
+  ] as [number, number, string, string][]).map(([d, v, c, desc], i) => ({
+    id: 's' + i, igreja_id: IG, tipo: 'saida', valor: v, data: dia(d), pessoa_id: null, nome: null, categoria: c, descricao: desc, forma: 'pix', criado_por: CARLOS, criado_em: agora(),
+  })),
+  // meses anteriores, pra ter o gráfico
+  ...[1, 2, 3, 4, 5].flatMap((k) => [
+    { id: `h${k}e`, igreja_id: IG, tipo: 'dizimo', valor: 2400 + k * 130, data: dia(-30 * k - 2), pessoa_id: null, nome: 'Dízimos do mês', forma: 'pix', criado_por: CARLOS, criado_em: agora() },
+    { id: `h${k}o`, igreja_id: IG, tipo: 'oferta', valor: 700 + k * 40, data: dia(-30 * k - 3), pessoa_id: null, nome: 'Ofertas do mês', forma: 'dinheiro', criado_por: CARLOS, criado_em: agora() },
+    { id: `h${k}s`, igreja_id: IG, tipo: 'saida', valor: 1900 + (k % 3) * 400, data: dia(-30 * k - 5), pessoa_id: null, nome: null, categoria: 'Aluguel', descricao: 'Despesas do mês', forma: 'pix', criado_por: CARLOS, criado_em: agora() },
+  ]),
 ]
 
 const agenda: Linha[] = [

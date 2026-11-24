@@ -37,7 +37,7 @@ export default function Relatorios() {
         supabase.from('pessoas').select('*').eq('igreja_id', id),
         supabase.from('cultos').select('*').eq('igreja_id', id).gte('data', ini).lte('data', fim).order('data'),
         fin ? supabase.from('lancamentos').select('*').eq('igreja_id', id).gte('data', ini).lte('data', fim) : Promise.resolve({ data: [] }),
-        fin ? supabase.from('lancamentos').select('valor').eq('igreja_id', id).gte('data', `${mesAnt}-01`).lte('data', `${mesAnt}-31`) : Promise.resolve({ data: [] }),
+        fin ? supabase.from('lancamentos').select('valor').eq('igreja_id', id).neq('tipo', 'saida').gte('data', `${mesAnt}-01`).lte('data', `${mesAnt}-31`) : Promise.resolve({ data: [] }),
         supabase.from('contatos').select('id').eq('igreja_id', id).gte('criado_em', iniTs).lte('criado_em', fimTs),
         supabase.from('agenda').select('id').eq('igreja_id', id).eq('feito', true).gte('inicio', iniTs).lte('inicio', fimTs),
       ])
@@ -91,7 +91,8 @@ export default function Relatorios() {
   const maiorEtapa = Math.max(1, ...porEtapa.map((e) => e.n))
 
   const soma = (t: Lancamento['tipo']) => d.lancamentos.filter((l) => l.tipo === t).reduce((s, l) => s + Number(l.valor), 0)
-  const totalMes = d.lancamentos.reduce((s, l) => s + Number(l.valor), 0)
+  const totalMes = d.lancamentos.filter((l) => l.tipo !== 'saida').reduce((s, l) => s + Number(l.valor), 0)
+  const saidasMes = d.lancamentos.filter((l) => l.tipo === 'saida').reduce((s, l) => s + Number(l.valor), 0)
   const variacao = d.lancAnterior ? Math.round(((totalMes - d.lancAnterior) / d.lancAnterior) * 100) : null
   const dizimistas = new Set(d.lancamentos.filter((l) => l.tipo === 'dizimo' && l.pessoa_id).map((l) => l.pessoa_id)).size
 
@@ -136,7 +137,7 @@ export default function Relatorios() {
 
         {fin && (
           <section className="painel">
-            <h2>Dízimos e ofertas</h2>
+            <h2>Tesouraria</h2>
             <div className="fin-total">
               <strong>{dinheiro(totalMes)}</strong>
               {variacao !== null && (
@@ -150,6 +151,8 @@ export default function Relatorios() {
               <div><dt>Ofertas</dt><dd>{dinheiro(soma('oferta'))}</dd></div>
               <div><dt>Outras entradas</dt><dd>{dinheiro(soma('outro'))}</dd></div>
               <div><dt>Dizimistas</dt><dd>{dizimistas}</dd></div>
+              <div><dt>Saídas</dt><dd>{dinheiro(saidasMes)}</dd></div>
+              <div><dt>Resultado</dt><dd>{dinheiro(totalMes - saidasMes)}</dd></div>
             </dl>
           </section>
         )}

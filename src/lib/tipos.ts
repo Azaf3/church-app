@@ -49,8 +49,10 @@ export interface Culto { id: string; data: string; titulo: string }
 
 export interface Lancamento {
   id: string
-  tipo: 'dizimo' | 'oferta' | 'outro'
+  tipo: 'dizimo' | 'oferta' | 'outro' | 'saida'
   valor: number
+  categoria: string | null
+  descricao: string | null
   data: string
   pessoa_id: string | null
   nome: string | null

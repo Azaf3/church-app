@@ -3,6 +3,7 @@
 // cabeçalho e podem ser corrigidas na tela antes de importar.
 
 import { lerCSV, normalizar } from './importar'
+import { adivinharCategoria } from './tesouraria'
 
 export type Celula = string | number | boolean | Date | null
 export type Tabela = Celula[][]
@@ -137,6 +138,7 @@ export interface LinhaFin {
   valor: number | null
   tipo: 'dizimo' | 'oferta' | 'outro'
   saida: boolean
+  categoria: string | null
   forma: 'pix' | 'dinheiro' | 'cartao' | 'transferencia'
   nome: string
   pessoa: PessoaRef | null
@@ -146,7 +148,7 @@ export interface LinhaFin {
 
 export function montarLinhas(
   t: Tabela, linhaCab: number, mapa: Mapa, pessoas: PessoaRef[],
-  op: { anoPadrao: number; tipoPadrao: 'dizimo' | 'oferta' | 'outro'; formaPadrao: LinhaFin['forma'] },
+  op: { anoPadrao: number; tipoPadrao: 'auto' | 'dizimo' | 'oferta' | 'outro'; formaPadrao: LinhaFin['forma'] },
 ): LinhaFin[] {
   const pega = (r: Celula[], c?: number) => (c === undefined ? null : r[c] ?? null)
   const out: LinhaFin[] = []
@@ -188,7 +190,8 @@ export function montarLinhas(
     const pessoa = nome ? acharPessoa(nome, pessoas) : null
     out.push({
       n: i + 1, data, valor: Math.round(valor * 100) / 100, saida,
-      tipo: tipoLido && tipoLido !== 'saida' ? tipoLido : op.tipoPadrao,
+      categoria: saida ? adivinharCategoria(descricao, tipoTxt, nome) : null,
+      tipo: tipoLido && tipoLido !== 'saida' ? tipoLido : op.tipoPadrao === 'auto' ? (nome ? 'dizimo' : 'oferta') : op.tipoPadrao,
       forma: lerForma(texto(pega(r, mapa.forma))) ?? op.formaPadrao,
       nome, pessoa, descricao, problemas,
     })
@@ -211,4 +214,16 @@ export async function lerArquivo(f: File): Promise<{ aba: string; tabela: Tabela
   const { default: lerXlsx } = await import('read-excel-file/browser')
   const abas = await lerXlsx(f)
   return abas.map((a) => ({ aba: a.sheet, tabela: a.data as Tabela }))
+}
+
+// escolhe sozinho a aba com mais lançamentos válidos
+export function melhorAba(abas: { aba: string; tabela: Tabela }[], anoPadrao: number) {
+  let melhor = { i: 0, n: -1 }
+  abas.forEach((a, i) => {
+    const c = acharCabecalho(a.tabela)
+    const n = montarLinhas(a.tabela, c.linha, c.mapa, [], { anoPadrao, tipoPadrao: 'auto', formaPadrao: 'dinheiro' })
+      .filter((l) => !l.saida && l.data).length
+    if (n > melhor.n) melhor = { i, n }
+  })
+  return melhor.i
 }

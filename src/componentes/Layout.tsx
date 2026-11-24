@@ -28,7 +28,7 @@ export default function Layout() {
       { para: '/aniversariantes', nome: 'Aniversariantes', icone: 'bolo' },
     ] },
     { titulo: 'Gestão', itens: [
-      ...(podeFinanceiro(papel) ? [{ para: '/financeiro', nome: 'Dízimos e ofertas', icone: 'dinheiro' }] : []),
+      ...(podeFinanceiro(papel) ? [{ para: '/financeiro', nome: 'Tesouraria', icone: 'dinheiro' }] : []),
       { para: '/relatorios', nome: 'Relatórios', icone: 'grafico' },
       { para: '/equipe', nome: 'Equipe', icone: 'equipe' },
       ...(podeEquipe(papel) ? [

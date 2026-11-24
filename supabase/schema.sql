@@ -110,7 +110,9 @@ create table igreja.presencas (
 create table igreja.lancamentos (
   id uuid primary key default gen_random_uuid(),
   igreja_id uuid not null references igreja.igrejas(id) on delete cascade,
-  tipo text not null check (tipo in ('dizimo','oferta','outro')),
+  tipo text not null check (tipo in ('dizimo','oferta','outro','saida')),
+  categoria text,
+  descricao text,
   valor numeric(12,2) not null check (valor > 0),
   data date not null default current_date,
   pessoa_id uuid references igreja.pessoas(id) on delete set null,

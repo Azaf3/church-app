@@ -8,7 +8,7 @@ export default function Mais() {
 
   const itens = [
     { para: '/presenca', nome: 'Presença no culto', icone: 'presenca' },
-    ...(podeFinanceiro(papel) ? [{ para: '/financeiro', nome: 'Dízimos e ofertas', icone: 'dinheiro' }] : []),
+    ...(podeFinanceiro(papel) ? [{ para: '/financeiro', nome: 'Tesouraria', icone: 'dinheiro' }] : []),
     { para: '/aniversariantes', nome: 'Aniversariantes', icone: 'bolo' },
     { para: '/relatorios', nome: 'Relatórios do mês', icone: 'grafico' },
     { para: '/equipe', nome: 'Equipe', icone: 'equipe' },
