@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import type { Lancamento, Pessoa } from '../lib/tipos'
@@ -54,7 +54,10 @@ export default function Financeiro() {
     <>
       <div className="cabecalho">
         <h1 className="titulo">Dízimos e ofertas</h1>
-        <button className="btn btn-primario" onClick={() => setNovo(true)}><Icone nome="mais_um" tam={18} /> Lançar</button>
+        <div className="acoes-topo">
+          <Link className="btn" to="/financeiro/importar"><Icone nome="importar" tam={18} /> Importar planilha</Link>
+          <button className="btn btn-primario" onClick={() => setNovo(true)}><Icone nome="mais_um" tam={18} /> Lançar</button>
+        </div>
       </div>
 
       <div className="mes">

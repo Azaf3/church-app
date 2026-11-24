@@ -448,3 +448,35 @@ body { background: var(--fundo); }
 .pergunta .seg { margin: 0; }
 .entrada.cadastro { align-items: start; padding-top: 40px; }
 .entrada.cadastro .entrada-cartao { max-width: 520px; }
+
+/* importar financeiro */
+.acoes-topo { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.config-imp { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.config-imp label { display: grid; gap: 5px; font-size: 13px; font-weight: 600; color: var(--suave); }
+.config-imp label small { font-weight: 400; }
+.config-imp select, .config-imp input, .linha-fin select {
+  padding: 9px 10px; border-radius: 10px; border: 1px solid var(--linha); background: var(--papel); font-size: 15px; width: 100%;
+}
+.resumo-imp { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; color: var(--suave); }
+.resumo-imp strong { color: var(--verde-escuro); font-size: 17px; }
+.linha-fin { display: flex; gap: 12px; align-items: flex-start; padding: 12px 2px; border-top: 1px solid var(--linha); }
+.linha-fin:first-child { border-top: none; }
+.linha-fin.desmarcada { opacity: .55; }
+.linha-fin .caixa { margin-top: 4px; }
+.linha-fin-info { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.linha-fin-topo { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.linha-fin-topo select { width: auto; padding: 5px 8px; font-size: 14px; }
+.linha-fin-topo small { color: var(--suave); }
+.linha-fin-quem { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.linha-fin-quem select { width: auto; max-width: 100%; padding: 5px 8px; font-size: 14px; }
+.linha-fin-quem small { color: var(--suave); }
+.nome-planilha { font-style: italic; color: var(--suave); }
+.linha-fin .avisos { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.linha-fin .avisos small { color: var(--suave); font-size: 12px; }
+.linha-fin .tag { white-space: normal; }
+
+.colunas-imp summary { cursor: pointer; list-style: none; display: grid; gap: 2px; }
+.colunas-imp summary::-webkit-details-marker { display: none; }
+.colunas-imp summary h2 { font-size: 15px; margin: 0; color: var(--verde-escuro); }
+.colunas-imp summary .suave { margin: 0; font-size: 13.5px; }
+.colunas-imp[open] summary { margin-bottom: 14px; }

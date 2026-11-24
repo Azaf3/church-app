@@ -18,6 +18,7 @@ import Importar from './paginas/Importar'
 import Configuracoes from './paginas/Configuracoes'
 import Relatorios from './paginas/Relatorios'
 import AreaMembro from './paginas/AreaMembro'
+import ImportarFinanceiro from './paginas/ImportarFinanceiro'
 
 export default function App() {
   const { carregando, session, igreja, papel } = useSessao()
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="jornada" element={<Jornada />} />
         <Route path="presenca" element={<Presenca />} />
         <Route path="financeiro" element={<Financeiro />} />
+        <Route path="financeiro/importar" element={<ImportarFinanceiro />} />
         <Route path="agenda" element={<Agenda />} />
         <Route path="aniversariantes" element={<Aniversariantes />} />
         <Route path="equipe" element={<Equipe />} />
