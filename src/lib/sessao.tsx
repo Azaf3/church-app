@@ -70,6 +70,14 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { aplicarTema(igreja?.cor ?? COR_PADRAO) }, [igreja?.cor])
 
+  // aba do navegador com o nome e o logo da igreja
+  useEffect(() => {
+    if (!igreja) return
+    document.title = igreja.nome
+    const link = document.querySelector<HTMLLinkElement>('link[rel=icon]')
+    if (link && igreja.logo) { link.href = igreja.logo; link.type = igreja.logo.slice(5, igreja.logo.indexOf(';')) }
+  }, [igreja?.nome, igreja?.logo])
+
   const papel = equipe.find((e) => e.user_id === userId)?.papel
   const nomeDe = (id: string | null) => equipe.find((e) => e.user_id === id)?.nome ?? '—'
 

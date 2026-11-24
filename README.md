@@ -1,4 +1,4 @@
-# Pastoreio — gestão pastoral pra igrejas
+# App da Igreja Cristã Esperança (ICESP)
 
 Web app (React + Vite + TypeScript + Supabase), mobile-first e instalável como PWA.
 Multi-igreja: cada igreja só enxerga os próprios dados (garantido por RLS no banco).

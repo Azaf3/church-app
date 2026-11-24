@@ -17,7 +17,9 @@ const luminancia = ([r, g, b]: RGB) => {
   return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
 }
 
-export const COR_PADRAO = '#1f5c4c'
+import { APP_COR } from '../config'
+
+export const COR_PADRAO = APP_COR
 
 // versão mais viva e clara da cor (para marcas, barras e detalhes)
 function vivo([r, g, b]: RGB): RGB {

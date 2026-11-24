@@ -1,9 +1,15 @@
 {
-  "name": "Pastoreio",
-  "short_name": "Pastoreio",
+  "name": "ICESP · Igreja Cristã Esperança",
+  "short_name": "ICESP",
+  "description": "Cuidado pastoral da Igreja Cristã Esperança",
   "start_url": ".",
+  "scope": ".",
   "display": "standalone",
-  "background_color": "#f5f2ec",
-  "theme_color": "#1f5c4c",
-  "icons": [{ "src": "icone.svg", "sizes": "any", "type": "image/svg+xml" }]
+  "background_color": "#f4f6f2",
+  "theme_color": "#2b6439",
+  "icons": [
+    { "src": "logos/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "logos/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "logos/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
 }

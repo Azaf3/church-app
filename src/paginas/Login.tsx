@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
-import { NOME_PRODUTO } from '../lib/util'
+import { APP_ICONE, APP_NOME, APP_SIGLA } from '../config'
 import { linkDoApp } from '../lib/acesso'
 
 export default function Login() {
@@ -37,9 +37,11 @@ export default function Login() {
   return (
     <div className="entrada">
       <div className="entrada-cartao">
-        <span className="topo-marca grande" />
-        <h1>{NOME_PRODUTO}</h1>
-        <p className="suave">O cuidado com cada pessoa da sua igreja, num lugar só.</p>
+        <img className="entrada-logo" src={import.meta.env.BASE_URL + APP_ICONE} alt=""
+          onError={(e) => { e.currentTarget.style.display = 'none' }} />
+        <p className="entrada-sigla">{APP_SIGLA}</p>
+        <h1>{APP_NOME}</h1>
+        <p className="suave">Cuidado com cada pessoa da igreja: membros, visitantes, agenda e dízimos num lugar só.</p>
 
         <button className="btn btn-google" onClick={entrarGoogle} type="button">
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
