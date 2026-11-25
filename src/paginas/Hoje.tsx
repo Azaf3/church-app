@@ -64,7 +64,7 @@ export default function Hoje() {
       setContagem({
         membros: pessoas.filter((x) => x.tipo === 'membro').length,
         visitantes: pessoas.filter((x) => x.tipo === 'visitante').length,
-        novosMes: pessoas.filter((x) => x.criado_em.slice(0, 7) === mes).length,
+        novosMes: pessoas.filter((x) => x.tipo === 'membro' && x.criado_em.slice(0, 7) === mes).length,
       })
 
       const culto = (c.data?.[0] as Culto) ?? null
@@ -140,7 +140,7 @@ export default function Hoje() {
         <Link to="/pessoas" className="numero">
           <span>Membros</span>
           <strong>{contagem.membros}</strong>
-          <small>{contagem.novosMes > 0 && contagem.novosMes < contagem.membros + contagem.visitantes ? `+${contagem.novosMes} novos este mês` : 'ativos na igreja'}</small>
+          <small>{contagem.novosMes > 0 && contagem.novosMes < contagem.membros ? `+${contagem.novosMes} novos este mês` : 'ativos na igreja'}</small>
         </Link>
         <Link to="/jornada" className="numero">
           <span>Visitantes</span>
