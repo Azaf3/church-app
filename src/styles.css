@@ -896,3 +896,6 @@ span.fixa-valor { width: 110px; text-align: right; color: var(--suave); font-var
 .opcao-culto strong { font-family: var(--titulo); font-size: 17px; font-weight: 600; color: var(--verde-escuro); }
 .opcao-culto span { color: var(--suave); font-size: 14px; }
 .opcao-culto em { font-style: normal; font-weight: 700; color: var(--verde); font-size: 14px; margin-top: 4px; }
+/* faixas de números com qualquer quantidade de itens */
+@media (min-width: 900px) { .numeros:not(.cinco) { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); } }
+@media (max-width: 699px) { .capa .atalhos > :last-child:nth-child(odd) { grid-column: 1 / -1; } }

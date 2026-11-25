@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
-import type { Culto, Lancamento, Pessoa } from '../lib/tipos'
-import { ETAPAS, MESES, dataBR, dinheiro, hojeISO, podeFinanceiro } from '../lib/util'
+import type { Lancamento, Pessoa } from '../lib/tipos'
+import { ETAPAS, MESES, dinheiro, hojeISO, podeFinanceiro } from '../lib/util'
 import Icone from '../componentes/Icone'
 
 interface Dados {
   pessoas: Pessoa[]
-  cultos: (Culto & { presentes: number })[]
   lancamentos: Lancamento[]
   lancAnterior: number
   contatos: number
@@ -34,9 +33,8 @@ export default function Relatorios() {
     const iniTs = new Date(`${ini}T00:00:00`).toISOString()
     const fimTs = new Date(`${fim}T23:59:59`).toISOString()
     ;(async () => {
-      const [p, c, l, la, k, ag, rel] = await Promise.all([
+      const [p, l, la, k, ag, rel] = await Promise.all([
         supabase.from('pessoas').select('*').eq('igreja_id', id),
-        supabase.from('cultos').select('*').eq('igreja_id', id).gte('data', ini).lte('data', fim).order('data'),
         fin ? supabase.from('lancamentos').select('*').eq('igreja_id', id).gte('data', ini).lte('data', fim) : Promise.resolve({ data: [] }),
         fin ? supabase.from('lancamentos').select('valor').eq('igreja_id', id).in('tipo', ['dizimo', 'oferta', 'outro']).gte('data', `${mesAnt}-01`).lte('data', `${mesAnt}-31`) : Promise.resolve({ data: [] }),
         supabase.from('contatos').select('id').eq('igreja_id', id).gte('criado_em', iniTs).lte('criado_em', fimTs),
@@ -44,14 +42,8 @@ export default function Relatorios() {
         // dizimistas do mês na relação (planilha), quando o caixa não diz quem deu
         fin ? supabase.from('contribuicoes').select('contribuinte_id').eq('igreja_id', id).eq('tipo', 'dizimo').eq('ano', Number(ini.slice(0, 4))).eq('mes', Number(ini.slice(5, 7))) : Promise.resolve({ data: [] }),
       ])
-      const cultos = (c.data ?? []) as Culto[]
-      const comPresenca = await Promise.all(cultos.map(async (cu) => {
-        const { data } = await supabase.from('presencas').select('pessoa_id').eq('culto_id', cu.id)
-        return { ...cu, presentes: (data ?? []).length }
-      }))
       setD({
         pessoas: (p.data ?? []) as Pessoa[],
-        cultos: comPresenca,
         lancamentos: (l.data ?? []) as Lancamento[],
         lancAnterior: ((la.data ?? []) as { valor: number }[]).reduce((s, x) => s + Number(x.valor), 0),
         contatos: (k.data ?? []).length,
@@ -89,8 +81,6 @@ export default function Relatorios() {
   const novosVisitantes = novos.filter((p) => p.tipo === 'visitante')
   const batismos = d.pessoas.filter((p) => p.data_batismo && p.data_batismo >= ini && p.data_batismo <= fim)
   const aniversariantes = ativos.filter((p) => p.nascimento && Number(p.nascimento.slice(5, 7)) === m)
-  const mediaPresenca = d.cultos.length ? Math.round(d.cultos.reduce((s, c) => s + c.presentes, 0) / d.cultos.length) : 0
-  const maiorCulto = Math.max(1, ...d.cultos.map((c) => c.presentes))
   const porEtapa = ETAPAS.map((e) => ({ ...e, n: ativos.filter((p) => p.etapa === e.id).length }))
   const maiorEtapa = Math.max(1, ...porEtapa.map((e) => e.n))
 
@@ -110,25 +100,10 @@ export default function Relatorios() {
       <div className="numeros">
         <div className="numero"><span>Membros ativos</span><strong>{membros.length}</strong><small>{novos.filter((p) => p.tipo === 'membro').length} cadastrados no mês</small></div>
         <div className="numero"><span>Visitantes novos</span><strong>{novosVisitantes.length}</strong><small>{ativos.filter((p) => p.tipo === 'visitante').length} em acompanhamento</small></div>
-        <div className="numero"><span>Média por culto</span><strong>{d.cultos.length ? mediaPresenca : '—'}</strong><small>{d.cultos.length} {d.cultos.length === 1 ? 'culto' : 'cultos'} com chamada</small></div>
         <div className="numero"><span>Cuidado pastoral</span><strong>{d.contatos + d.visitas}</strong><small>{d.contatos} contatos · {d.visitas} visitas feitas</small></div>
       </div>
 
       <div className="colunas">
-        <section className="painel">
-          <h2>Presença nos cultos</h2>
-          {d.cultos.length === 0 && <p className="vazio">Nenhuma chamada feita neste mês.</p>}
-          <div className="barras">
-            {d.cultos.map((c) => (
-              <div key={c.id} className="barra-linha">
-                <span>{dataBR(c.data)}<small>{c.titulo}</small></span>
-                <i><b style={{ width: `${(c.presentes / maiorCulto) * 100}%` }} /></i>
-                <strong>{c.presentes}</strong>
-              </div>
-            ))}
-          </div>
-        </section>
-
         <section className="painel">
           <h2>Jornada dos visitantes</h2>
           <div className="barras">

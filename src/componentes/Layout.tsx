@@ -25,7 +25,6 @@ export default function Layout() {
       { para: '/pessoas', nome: 'Pessoas', icone: 'pessoas' },
       { para: '/jornada', nome: 'Jornada', icone: 'jornada' },
       { para: '/agenda', nome: 'Agenda pastoral', icone: 'agenda' },
-      { para: '/presenca', nome: 'Presença', icone: 'presenca' },
       { para: '/aniversariantes', nome: 'Aniversariantes', icone: 'bolo' },
     ] },
     { titulo: 'Gestão', itens: [

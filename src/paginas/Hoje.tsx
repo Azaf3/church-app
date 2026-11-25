@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
-import type { Compromisso, Culto, Pessoa } from '../lib/tipos'
+import type { Compromisso, Pessoa } from '../lib/tipos'
 import { dataBR, dinheiro, fimDia, hojeISO, horaBR, inicioDia, mesDia, podeFinanceiro, primeiroNome, situacaoPrazo } from '../lib/util'
 import BotaoWhats from '../componentes/BotaoWhats'
 import Icone from '../componentes/Icone'
@@ -16,9 +16,6 @@ export default function Hoje() {
   const { igreja, userId, equipe, papel, session } = useSessao()
   const [minhas, setMinhas] = useState<Pessoa[]>([])
   const [agenda, setAgenda] = useState<Compromisso[]>([])
-  const [faltaram, setFaltaram] = useState<Pessoa[]>([])
-  const [ultimoCulto, setUltimoCulto] = useState<Culto | null>(null)
-  const [presentes, setPresentes] = useState(0)
   const [aniversarios, setAniversarios] = useState<Pessoa[]>([])
   const [contagem, setContagem] = useState({ membros: 0, visitantes: 0, novosMes: 0 })
   const [entradasMes, setEntradasMes] = useState<number | null>(null)
@@ -45,13 +42,11 @@ export default function Hoje() {
     const mes = hoje.slice(0, 7)
 
     async function carregar() {
-      const [p, a, c, todos, lanc] = await Promise.all([
+      const [p, a, todos, lanc] = await Promise.all([
         supabase.from('pessoas').select('*').eq('igreja_id', id).eq('responsavel_id', userId!)
           .eq('ativo', true).not('proximo_passo', 'is', null).order('prazo', { nullsFirst: false }),
         supabase.from('agenda').select('*').eq('igreja_id', id).eq('feito', false)
           .gte('inicio', inicioDia()).lte('inicio', fimDia()).order('inicio'),
-        supabase.from('cultos').select('*').eq('igreja_id', id).lte('data', hoje)
-          .order('data', { ascending: false }).limit(1),
         supabase.from('pessoas').select('*').eq('igreja_id', id).eq('ativo', true),
         fin ? supabase.from('lancamentos').select('valor').eq('igreja_id', id).in('tipo', ['dizimo', 'oferta', 'outro']).gte('data', `${mes}-01`).lte('data', `${mes}-31`)
           : Promise.resolve({ data: null }),
@@ -67,14 +62,6 @@ export default function Hoje() {
         novosMes: pessoas.filter((x) => x.tipo === 'membro' && x.criado_em.slice(0, 7) === mes).length,
       })
 
-      const culto = (c.data?.[0] as Culto) ?? null
-      setUltimoCulto(culto)
-      if (culto) {
-        const { data: pres } = await supabase.from('presencas').select('pessoa_id').eq('culto_id', culto.id)
-        const vieram = new Set((pres ?? []).map((x: { pessoa_id: string }) => x.pessoa_id))
-        setPresentes(vieram.size)
-        setFaltaram(vieram.size > 0 ? pessoas.filter((x) => x.tipo === 'membro' && !vieram.has(x.id)) : [])
-      }
 
       const dias = Array.from({ length: 7 }, (_, i) => {
         const d = new Date(); d.setDate(d.getDate() + i)
@@ -91,12 +78,9 @@ export default function Hoje() {
 
   const d = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
   const hojeTexto = d.charAt(0).toUpperCase() + d.slice(1)
-  const chamadaAberta = !!ultimoCulto && presentes === 0
-  const pctPresenca = ultimoCulto && !chamadaAberta && contagem.membros ? Math.round(((contagem.membros - faltaram.length) / contagem.membros) * 100) : null
 
   const atalhos = [
     { para: '/pessoas?novo=1', nome: 'Novo visitante', icone: 'mais_um' },
-    { para: '/presenca', nome: 'Fazer chamada', icone: 'presenca' },
     ...(fin ? [{ para: '/financeiro?novo=1', nome: 'Lançar dízimo', icone: 'dinheiro' }] : []),
     { para: '/agenda?novo=1', nome: 'Marcar visita', icone: 'calendario_mais' },
   ]
@@ -147,36 +131,19 @@ export default function Hoje() {
           <strong>{contagem.visitantes}</strong>
           <small>em acompanhamento</small>
         </Link>
-        <Link to="/presenca" className={'numero' + (chamadaAberta ? ' pendente' : '')}>
-          <span>Último culto</span>
-          <strong>{ultimoCulto && !chamadaAberta ? presentes : '—'}</strong>
-          <small>{!ultimoCulto ? 'nenhuma chamada ainda' : chamadaAberta ? `chamada de ${dataBR(ultimoCulto.data)} em aberto` : `presentes · ${dataBR(ultimoCulto.data)}`}</small>
-          {pctPresenca !== null && <i className="barra"><b style={{ width: `${pctPresenca}%` }} /></i>}
+        <Link to="/aniversariantes" className="numero">
+          <span>Aniversários</span>
+          <strong>{aniversarios.length}</strong>
+          <small>nos próximos 7 dias</small>
         </Link>
-        {fin ? (
+        {fin && (
           <Link to="/financeiro" className="numero">
             <span>Entradas do mês</span>
             <strong className="valor">{dinheiro(entradasMes ?? 0)}</strong>
             <small>dízimos e ofertas</small>
           </Link>
-        ) : (
-          <Link to="/aniversariantes" className="numero">
-            <span>Aniversários</span>
-            <strong>{aniversarios.length}</strong>
-            <small>nos próximos 7 dias</small>
-          </Link>
         )}
       </div>
-
-      {chamadaAberta && (
-        <section className="painel chamada-aberta">
-          <div>
-            <h2>Chamada de {dataBR(ultimoCulto!.data)} em aberto</h2>
-            <p className="suave">Marque quem veio pra ver aqui quem faltou e mandar uma mensagem.</p>
-          </div>
-          <Link to="/presenca" className="btn btn-primario">Fazer chamada</Link>
-        </section>
-      )}
 
       <div className="quadro-hoje">
         <div className="qh-col">
@@ -201,23 +168,6 @@ export default function Hoje() {
               })}
             </ul>
           </section>
-        )}
-        {ultimoCulto && faltaram.length > 0 && (
-          <section className="painel">
-              <h2>Faltaram no culto de {dataBR(ultimoCulto.data)}</h2>
-              <ul className="lista plana">
-                {faltaram.slice(0, 6).map((p) => (
-                  <li key={p.id}>
-                    <Link to={`/pessoas/${p.id}`} className="item">
-                      <div className="item-texto"><strong>{p.nome}</strong></div>
-                      <BotaoWhats telefone={p.telefone}
-                        texto={`Oi ${primeiroNome(p.nome)}! Sentimos sua falta no culto. Está tudo bem com você?`} />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              {faltaram.length > 6 && <Link className="link" to="/presenca">Ver todos os {faltaram.length}</Link>}
-            </section>
         )}
         </div>
         <div className="qh-col">

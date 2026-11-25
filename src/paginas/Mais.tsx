@@ -7,7 +7,6 @@ export default function Mais() {
   const { papel, igrejas, igreja, trocarIgreja, sair, session } = useSessao()
 
   const itens = [
-    { para: '/presenca', nome: 'Presença no culto', icone: 'presenca' },
     ...(podeFinanceiro(papel) ? [{ para: '/financeiro', nome: 'Tesouraria', icone: 'dinheiro' }, { para: '/sete', nome: 'Seminário SETE', icone: 'livro' }] : []),
     { para: '/aniversariantes', nome: 'Aniversariantes', icone: 'bolo' },
     { para: '/relatorios', nome: 'Relatórios do mês', icone: 'grafico' },

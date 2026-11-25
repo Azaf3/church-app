@@ -8,7 +8,6 @@ import Hoje from './paginas/Hoje'
 import Pessoas from './paginas/Pessoas'
 import Ficha from './paginas/Ficha'
 import Jornada from './paginas/Jornada'
-import Presenca from './paginas/Presenca'
 import Financeiro from './paginas/Financeiro'
 import Agenda from './paginas/Agenda'
 import Aniversariantes from './paginas/Aniversariantes'
@@ -56,7 +55,6 @@ export default function App() {
         <Route path="pessoas" element={<Pessoas />} />
         <Route path="pessoas/:id" element={<Ficha />} />
         <Route path="jornada" element={<Jornada />} />
-        <Route path="presenca" element={<Presenca />} />
         <Route path="financeiro" element={<Financeiro />} />
         <Route path="financeiro/importar" element={<ImportarFinanceiro />} />
         <Route path="financeiro/ano" element={<TesAno />} />
