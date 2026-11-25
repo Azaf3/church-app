@@ -189,6 +189,8 @@ class Consulta {
     this.ordens.push({ k, asc, nullsFirst: o.nullsFirst ?? !asc }); return this
   }
   limit(n: number) { this.limite = n; return this }
+  private faixa: [number, number] | null = null
+  range(de: number, ate: number) { this.faixa = [de, ate]; return this }
   single() { this.umSo = true; return this }
 
   private executar() {
@@ -218,6 +220,7 @@ class Consulta {
         })
       }
       if (this.limite) res = res.slice(0, this.limite)
+      if (this.faixa) res = res.slice(this.faixa[0], this.faixa[1] + 1)
     }
     const copia = res.map((l) => ({ ...l }))
     return { data: this.umSo ? copia[0] ?? null : copia, error: null }

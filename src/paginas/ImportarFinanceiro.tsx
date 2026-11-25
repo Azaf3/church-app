@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { buscarTudo } from '../lib/buscarTudo'
 import { useSessao } from '../lib/sessao'
 import {
   CAMPOS_FIN, acharCabecalho, chaveLancamento, lerArquivo, lerRelacoes, lerTodasAbas, montarLinhas,
@@ -161,7 +162,7 @@ export default function ImportarFinanceiro() {
     // relação: o ano/tipo da planilha substitui o que havia
     let nRel = 0
     if (relacoes.length) {
-      const { data: jaTem } = await supabase.from('contribuintes').select('id, codigo').eq('igreja_id', igreja!.id)
+      const { data: jaTem } = await buscarTudo<{ id: string; codigo: string }>((de, ate) => supabase.from('contribuintes').select('id, codigo').eq('igreja_id', igreja!.id).order('id').range(de, ate))
       const ids = new Map(((jaTem ?? []) as { id: string; codigo: string }[]).map((c) => [c.codigo, c.id]))
       const novos = [...new Set(relacoes.flatMap((r) => r.linhas.map((l) => l.codigo)))].filter((c) => !ids.has(c))
       if (novos.length) {

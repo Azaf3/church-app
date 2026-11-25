@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { buscarTudo } from '../lib/buscarTudo'
 import { useSessao } from '../lib/sessao'
 import type { Lancamento } from '../lib/tipos'
 import { dinheiro, podeFinanceiro } from '../lib/util'
@@ -18,7 +19,7 @@ export default function TesAno() {
 
   useEffect(() => {
     if (!igreja || !podeFinanceiro(papel)) return
-    supabase.from('lancamentos').select('*').eq('igreja_id', igreja.id).order('data')
+    buscarTudo<Lancamento>((de, ate) => supabase.from('lancamentos').select('*').eq('igreja_id', igreja.id).order('data').order('id').range(de, ate))
       .then(({ data }) => setTodos((data as Lancamento[]) ?? []))
   }, [igreja?.id, papel])
 

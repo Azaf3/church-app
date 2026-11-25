@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { buscarTudo } from '../lib/buscarTudo'
 import { useSessao } from '../lib/sessao'
 import type { Lancamento, Pessoa } from '../lib/tipos'
 import { MESES, dataBR, dinheiro, hojeISO, podeFinanceiro } from '../lib/util'
@@ -26,7 +27,7 @@ export default function Financeiro() {
 
   function carregar() {
     if (!igreja || !podeFinanceiro(papel)) return
-    supabase.from('lancamentos').select('*').eq('igreja_id', igreja.id).order('data', { ascending: false })
+    buscarTudo<Lancamento>((de, ate) => supabase.from('lancamentos').select('*').eq('igreja_id', igreja.id).order('data', { ascending: false }).order('id').range(de, ate))
       .then(({ data }) => setTodos((data as Lancamento[]) ?? []))
   }
   useEffect(carregar, [igreja?.id, papel])
@@ -187,6 +188,7 @@ export default function Financeiro() {
 
             <section className="painel">
               <h2>De onde veio</h2>
+              {contas.totEnt === 0 && <p className="vazio">Nenhuma entrada neste mês.</p>}
               <div className="barras">
                 {contas.porTipo.filter(({ v }) => v > 0).map(({ t, v }) => (
                   <div key={t} className="barra-linha">
@@ -226,7 +228,7 @@ export default function Financeiro() {
             <div className="tabela-rolar">
               <table className="tabela-livro">
                 <thead>
-                  <tr><th>Data</th><th className="esq">Descrição</th><th className="esq">Tipo</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr>
+                  <tr><th>Data</th><th className="esq">Descrição</th><th className="esq col-tipo">Tipo</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr>
                 </thead>
                 <tbody>
                   <tr className="linha-saldo"><td /><td className="esq" colSpan={2}>Saldo anterior</td><td /><td /><td>{num(saldoAnterior)}</td></tr>
@@ -236,8 +238,9 @@ export default function Financeiro() {
                       <td className="esq desc">
                         {ehSaldoInicial(l) ? (l.descricao || 'Saldo inicial') : ehSaida(l) ? (l.descricao || l.nome || l.categoria || 'Saída') : (nomeDe(l) || l.descricao || 'Entrada')}
                         {l.campanha && <em className="tag-fundo"> · {l.campanha}</em>}
+                        <small className="tipo-cel">{ehSaldoInicial(l) ? 'Saldo inicial' : ehSaida(l) ? (l.categoria || OUTRAS) : ENTRADAS[l.tipo as keyof typeof ENTRADAS]}</small>
                       </td>
-                      <td className="esq tipo">
+                      <td className="esq tipo col-tipo">
                         {ehSaldoInicial(l) ? 'Saldo inicial' : ehSaida(l) ? (l.categoria || OUTRAS) : ENTRADAS[l.tipo as keyof typeof ENTRADAS]}
                         {visao === 'tudo' && (l.fundo ?? 'geral') !== 'geral' && <em className="tag-fundo"> · {FUNDOS[l.fundo]}</em>}
                       </td>

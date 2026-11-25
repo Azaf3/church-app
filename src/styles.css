@@ -678,3 +678,16 @@ button.numero.ativo { border-color: var(--verde); box-shadow: inset 0 0 0 1px va
 .sit-tag.cinza { background: #eceeec; color: var(--suave); }
 .sit-tag.aviso { background: var(--ambar-claro); color: #9a6a12; }
 strong.ambar { color: #b98216; }
+/* tesouraria no celular */
+.tipo-cel { display: none; }
+@media (max-width: 700px) {
+  .tesouraria .cabecalho, .tes-relacao .cabecalho { flex-wrap: wrap; }
+  .tesouraria .cabecalho .acoes-topo { width: 100%; justify-content: stretch; }
+  .tesouraria .cabecalho .acoes-topo > * { flex: 1 1 auto; justify-content: center; }
+  .tabela-livro .col-tipo { display: none; }
+  .tabela-livro td.desc { min-width: 130px; }
+  .tipo-cel { display: block; font-size: 11.5px; color: var(--suave); font-weight: 400; }
+  .tabela-livro th, .tabela-livro td { padding: 7px 5px; font-size: 12.5px; }
+  .tabela-ano tbody th { white-space: normal; min-width: 110px; }
+  .linha-rapida .lr-valor { flex: 1; }
+}

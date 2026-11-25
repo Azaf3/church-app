@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { buscarTudo } from '../lib/buscarTudo'
 import { useSessao } from '../lib/sessao'
 import type { Contribuicao, Contribuinte, Pessoa } from '../lib/tipos'
 import { dinheiro, podeFinanceiro } from '../lib/util'
@@ -26,8 +27,8 @@ export default function TesRelacao() {
   async function carregar() {
     if (!igreja || !podeFinanceiro(papel)) return
     const [c, v] = await Promise.all([
-      supabase.from('contribuintes').select('*').eq('igreja_id', igreja.id).order('codigo'),
-      supabase.from('contribuicoes').select('*').eq('igreja_id', igreja.id),
+      buscarTudo<Contribuinte>((de, ate) => supabase.from('contribuintes').select('*').eq('igreja_id', igreja.id).order('codigo').order('id').range(de, ate)),
+      buscarTudo<Contribuicao>((de, ate) => supabase.from('contribuicoes').select('*').eq('igreja_id', igreja.id).order('id').range(de, ate)),
     ])
     setContribuintes((c.data as Contribuinte[]) ?? [])
     setValores((v.data as Contribuicao[]) ?? [])
