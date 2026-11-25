@@ -12,6 +12,9 @@ import TesAbas from '../componentes/TesAbas'
 import DespesasFixas from '../componentes/DespesasFixas'
 import { resolverContribuinte, rotuloContribuinte } from '../lib/contribuintes'
 
+// fechamento do mês: pronto, mas desligado até o tesoureiro pedir
+const FECHAMENTO_ATIVO = false
+
 type Filtro = 'tudo' | 'entradas' | 'saidas'
 type Visao = 'tudo' | Fundo
 
@@ -106,7 +109,7 @@ export default function Financeiro() {
     .filter(({ l }) => lista.includes(l))
   const vazio = todos !== null && todos.length === 0
   const fechMes = fechamentos.find((f) => f.mes === mes)
-  const fechado = fechMes?.situacao === 'fechado'
+  const fechado = FECHAMENTO_ATIVO && fechMes?.situacao === 'fechado'
   // saldo de todos os caixas no fim do mês (é o que bate com o banco)
   const saldoFimMes = (() => { const x = (todos ?? []).filter((l) => l.data.slice(0, 7) <= mes); return somar(x.filter((l) => !ehSaida(l))) - somar(x.filter(ehSaida)) })()
   const meuNome = equipe.find((e) => e.user_id === userId)?.nome ?? null
@@ -158,7 +161,7 @@ export default function Financeiro() {
               {MESES.map((nome, i) => {
                 const ym = `${a}-${String(i + 1).padStart(2, '0')}`
                 const tem = (todos ?? []).some((l) => l.data.startsWith(ym))
-                const trancado = fechamentos.some((f) => f.mes === ym && f.situacao === 'fechado')
+                const trancado = FECHAMENTO_ATIVO && fechamentos.some((f) => f.mes === ym && f.situacao === 'fechado')
                 return (
                   <button key={ym} className={(ym === mes ? 'ativo ' : '') + (tem ? 'tem ' : '') + (trancado ? 'fechado' : '')} onClick={() => setMes(ym)}
                     title={trancado ? 'Mês fechado' : undefined}>
@@ -168,7 +171,7 @@ export default function Financeiro() {
               })}
             </div>
           </div>
-          <div className={'fechamento sem-impressao' + (fechado ? ' fechado' : '')}>
+          {FECHAMENTO_ATIVO && <div className={'fechamento sem-impressao' + (fechado ? ' fechado' : '')}>
             {fechado && fechMes ? (
               <>
                 <div>
@@ -192,7 +195,7 @@ export default function Financeiro() {
                 {mes <= hojeISO().slice(0, 7) && <button className="btn btn-mini btn-primario" onClick={() => setFechando('fechar')}>Fechar o mês</button>}
               </>
             )}
-          </div>
+          </div>}
           <p className="so-impressao">{igreja?.nome} · Tesouraria{visao !== 'tudo' ? ` · ${FUNDOS[visao]}` : ''} · {MESES[m - 1]} de {a}</p>
 
           <div className="numeros">
