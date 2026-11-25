@@ -161,6 +161,7 @@ const PADROES: Record<string, Linha> = {
   lancamentos: { forma: 'pix' },
   cultos: { titulo: 'Culto' },
   contatos: { meio: 'whatsapp' },
+  despesas_fixas: { ativa: true, fundo: 'geral', dia: 5 },
 }
 
 // ---------- Query builder ----------

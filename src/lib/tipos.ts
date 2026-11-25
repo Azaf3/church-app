@@ -61,6 +61,18 @@ export interface Lancamento {
   nome: string | null
   forma: 'pix' | 'dinheiro' | 'cartao' | 'transferencia'
   campanha?: string | null
+  contribuinte_id?: string | null
+  fixa_id?: string | null
+}
+
+export interface DespesaFixa {
+  id: string
+  descricao: string
+  categoria: string | null
+  valor: number
+  fundo: 'geral' | 'missoes' | 'sete'
+  dia: number
+  ativa: boolean
 }
 
 export interface Contribuinte {

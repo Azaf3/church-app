@@ -3,12 +3,14 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { buscarTudo } from '../lib/buscarTudo'
 import { useSessao } from '../lib/sessao'
-import type { Lancamento, Pessoa } from '../lib/tipos'
+import type { Contribuinte, Lancamento, Pessoa } from '../lib/tipos'
 import { MESES, dataBR, dinheiro, hojeISO, podeFinanceiro } from '../lib/util'
 import { ENTRADAS, FORMAS, FUNDOS, NOMES_CATEGORIAS, OUTRAS, adivinharCategoria, ehEntrada, ehSaida, ehSaldoInicial, mesCurto, mesesAte, somar, type Fundo } from '../lib/tesouraria'
 import Folha from '../componentes/Folha'
 import Icone from '../componentes/Icone'
 import TesAbas from '../componentes/TesAbas'
+import DespesasFixas from '../componentes/DespesasFixas'
+import { resolverContribuinte, rotuloContribuinte } from '../lib/contribuintes'
 
 type Filtro = 'tudo' | 'entradas' | 'saidas'
 type Visao = 'tudo' | Fundo
@@ -19,11 +21,13 @@ export default function Financeiro() {
   const [mes, setMes] = useState(hojeISO().slice(0, 7))
   const [todos, setTodos] = useState<Lancamento[] | null>(null)
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
+  const [contribuintes, setContribuintes] = useState<Contribuinte[]>([])
   const [filtro, setFiltro] = useState<Filtro>('tudo')
   const [visao, setVisao] = useState<Visao>('tudo')
   const [busca, setBusca] = useState('')
   const [novo, setNovo] = useState<null | 'entrada' | 'saida'>(params.get('novo') === '1' ? 'entrada' : null)
   const [editando, setEditando] = useState<Lancamento | null>(null)
+  const [fixasAberta, setFixasAberta] = useState(false)
 
   function carregar() {
     if (!igreja || !podeFinanceiro(papel)) return
@@ -36,6 +40,8 @@ export default function Financeiro() {
     if (!igreja) return
     supabase.from('pessoas').select('id, nome').eq('igreja_id', igreja.id).eq('ativo', true).order('nome')
       .then(({ data }) => setPessoas((data as Pessoa[]) ?? []))
+    buscarTudo<Contribuinte>((de, ate) => supabase.from('contribuintes').select('*').eq('igreja_id', igreja.id).order('codigo').order('id').range(de, ate))
+      .then(({ data }) => setContribuintes(data ?? []))
   }, [igreja?.id])
 
   // saldo de cada caixa até o fim do mês escolhido
@@ -70,7 +76,11 @@ export default function Financeiro() {
   }
 
   const [a, m] = mes.split('-').map(Number)
-  const nomeDe = (l: Lancamento) => pessoas.find((p) => p.id === l.pessoa_id)?.nome ?? l.nome
+  const nomeDe = (l: Lancamento) => {
+    const c = l.contribuinte_id ? contribuintes.find((x) => x.id === l.contribuinte_id) : null
+    return c ? rotuloContribuinte(c, pessoas) : pessoas.find((p) => p.id === l.pessoa_id)?.nome ?? l.nome
+  }
+  const novoContribuinte = (c: Contribuinte) => setContribuintes((xs) => (xs.some((x) => x.id === c.id) ? xs : [...xs, c]))
   const resultado = contas.totEnt - contas.totSai
   const maiorMes = Math.max(1, ...contas.meses.flatMap((x) => [x.ent, x.sai]))
   const maiorCat = Math.max(1, ...contas.porCategoria.map((c) => c[1]))
@@ -215,7 +225,10 @@ export default function Financeiro() {
           <section className="painel livro">
             <div className="lista-topo">
               <h2>Livro-caixa de {MESES[m - 1].toLowerCase()}{visao !== 'tudo' ? ` · ${FUNDOS[visao]}` : ''}</h2>
-              <button className="btn btn-mini sem-impressao" onClick={() => window.print()}>Imprimir / PDF</button>
+              <div className="acoes-livro sem-impressao">
+                <button className="btn btn-mini" onClick={() => setFixasAberta(true)}>Despesas fixas</button>
+                <button className="btn btn-mini" onClick={() => window.print()}>Imprimir / PDF</button>
+              </div>
             </div>
             <div className="lista-filtros sem-impressao">
               <div className="seg">
@@ -256,7 +269,7 @@ export default function Financeiro() {
                 </tfoot>
               </table>
             </div>
-            <LinhaRapida mes={mes} visao={visao} igrejaId={igreja!.id} userId={userId!}
+            <LinhaRapida mes={mes} visao={visao} igrejaId={igreja!.id} userId={userId!} pessoas={pessoas} contribuintes={contribuintes} novoContribuinte={novoContribuinte}
               salvo={(l) => setTodos([...(todos ?? []), l])} />
             <p className="dica sem-impressao">Toque numa linha pra corrigir ou apagar.</p>
           </section>
@@ -264,11 +277,15 @@ export default function Financeiro() {
       )}
 
       <Folha titulo={novo === 'saida' ? 'Nova saída' : 'Nova entrada'} aberta={!!novo} fechar={() => setNovo(null)}>
-        {novo && <FormLancamento modo={novo} fundoPadrao={visao === 'tudo' ? 'geral' : visao} igrejaId={igreja!.id} userId={userId!} pessoas={pessoas} campanhas={campanhas}
+        {novo && <FormLancamento modo={novo} fundoPadrao={visao === 'tudo' ? 'geral' : visao} igrejaId={igreja!.id} userId={userId!} pessoas={pessoas} campanhas={campanhas} contribuintes={contribuintes} novoContribuinte={novoContribuinte}
           salvo={(l) => { setTodos([l, ...(todos ?? [])]); setMes(l.data.slice(0, 7)); setNovo(null) }} />}
       </Folha>
+      <Folha titulo={`Despesas fixas · ${MESES[Number(mes.slice(5)) - 1]}`} aberta={fixasAberta} fechar={() => setFixasAberta(false)}>
+        {fixasAberta && <DespesasFixas mes={mes} igrejaId={igreja!.id} userId={userId!} todos={todos ?? []}
+          lancadas={(ls) => { setTodos([...(todos ?? []), ...ls]); setFixasAberta(false) }} />}
+      </Folha>
       <Folha titulo="Lançamento" aberta={!!editando} fechar={() => setEditando(null)}>
-        {editando && <FormLancamento modo={ehSaida(editando) ? 'saida' : 'entrada'} inicial={editando} igrejaId={igreja!.id} userId={userId!} pessoas={pessoas} campanhas={campanhas}
+        {editando && <FormLancamento modo={ehSaida(editando) ? 'saida' : 'entrada'} inicial={editando} igrejaId={igreja!.id} userId={userId!} pessoas={pessoas} campanhas={campanhas} contribuintes={contribuintes} novoContribuinte={novoContribuinte}
           salvo={(l) => { setTodos((todos ?? []).map((x) => (x.id === l.id ? l : x))); setEditando(null) }}
           apagado={(id) => { setTodos((todos ?? []).filter((x) => x.id !== id)); setEditando(null) }} />}
       </Folha>
@@ -276,16 +293,17 @@ export default function Financeiro() {
   )
 }
 
-function FormLancamento({ modo, inicial, fundoPadrao = 'geral', igrejaId, userId, pessoas, campanhas, salvo, apagado }: {
+function FormLancamento({ modo, inicial, fundoPadrao = 'geral', igrejaId, userId, pessoas, campanhas, contribuintes, novoContribuinte, salvo, apagado }: {
   modo: 'entrada' | 'saida'; inicial?: Lancamento; fundoPadrao?: Fundo; igrejaId: string; userId: string; pessoas: Pessoa[]; campanhas: string[]
+  contribuintes: Contribuinte[]; novoContribuinte: (c: Contribuinte) => void
   salvo: (l: Lancamento) => void; apagado?: (id: string) => void
 }) {
   const saida = modo === 'saida'
   const [tipo, setTipo] = useState<Lancamento['tipo']>(inicial?.tipo ?? (saida ? 'saida' : 'dizimo'))
   const [valor, setValor] = useState(inicial ? String(inicial.valor).replace('.', ',') : '')
   const [data, setData] = useState(inicial?.data ?? hojeISO())
-  const [pessoaId, setPessoaId] = useState(inicial?.pessoa_id ?? '')
-  const [nome, setNome] = useState(inicial?.nome ?? '')
+  const contribIni = inicial?.contribuinte_id ? contribuintes.find((c) => c.id === inicial.contribuinte_id) : null
+  const [quem, setQuem] = useState(contribIni ? rotuloContribuinte(contribIni, pessoas) : pessoas.find((p) => p.id === inicial?.pessoa_id)?.nome ?? inicial?.nome ?? '')
   const [descricao, setDescricao] = useState(inicial?.descricao ?? '')
   const [categoria, setCategoria] = useState(inicial?.categoria ?? NOMES_CATEGORIAS[0])
   const [forma, setForma] = useState<Lancamento['forma']>(inicial?.forma ?? 'pix')
@@ -299,10 +317,16 @@ function FormLancamento({ modo, inicial, fundoPadrao = 'geral', igrejaId, userId
     e.preventDefault()
     const v = Number(valor.replace(/\./g, '').replace(',', '.'))
     if (!v || v <= 0) { setErro('Valor inválido.'); return }
+    // dízimo e oferta com nome: liga ao contribuinte da relação (cria se for novo)
+    const relacao = !saida && !saldoIni && (tipo === 'dizimo' || tipo === 'oferta')
+    const contrib = relacao ? await resolverContribuinte(igrejaId, quem, contribuintes, pessoas) : null
+    if (contrib) novoContribuinte(contrib)
+    const pessoaQuem = !saida ? pessoas.find((p) => p.nome.toLowerCase() === quem.trim().toLowerCase()) : undefined
     const reg = {
       igreja_id: igrejaId, tipo: saldoIni ? 'saldo_inicial' : saida ? 'saida' : tipo, valor: v, data, forma, criado_por: userId, fundo,
-      pessoa_id: saida ? null : pessoaId || null,
-      nome: saida ? null : pessoaId ? null : nome || null,
+      pessoa_id: saida ? null : contrib?.pessoa_id ?? pessoaQuem?.id ?? null,
+      nome: saida || contrib || pessoaQuem ? null : quem.trim() || null,
+      ...(relacao || inicial?.contribuinte_id ? { contribuinte_id: contrib?.id ?? null } : {}),
       descricao: descricao || null,
       categoria: saida ? categoria : null,
       ...(campanha.trim() || inicial?.campanha ? { campanha: campanha.trim() || null } : {}),
@@ -349,13 +373,14 @@ function FormLancamento({ modo, inicial, fundoPadrao = 'geral', igrejaId, userId
         </>
       ) : (
         <>
-          <label>Quem deu
-            <select value={pessoaId} onChange={(e) => setPessoaId(e.target.value)}>
-              <option value="">Não cadastrado / anônimo</option>
-              {pessoas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-            </select>
+          <label>Quem deu (opcional)
+            <input list="quem-deu" value={quem} onChange={(e) => setQuem(e.target.value)} placeholder="Nome ou código da relação" />
+            <datalist id="quem-deu">
+              {contribuintes.map((c) => <option key={c.id} value={rotuloContribuinte(c, pessoas)} />)}
+              {pessoas.filter((p) => !contribuintes.some((c) => c.pessoa_id === p.id)).map((p) => <option key={p.id} value={p.nome} />)}
+            </datalist>
           </label>
-          {!pessoaId && <label>Nome (opcional)<input value={nome} onChange={(e) => setNome(e.target.value)} /></label>}
+          {(tipo === 'dizimo' || tipo === 'oferta') && quem.trim() && <p className="dica">Entra também na relação de {tipo === 'dizimo' ? 'dizimistas' : 'ofertantes'}.</p>}
           <label>Observação (opcional)<input value={descricao} onChange={(e) => setDescricao(e.target.value)} /></label>
         </>
       )}
@@ -388,9 +413,11 @@ function FormLancamento({ modo, inicial, fundoPadrao = 'geral', igrejaId, userId
 const num = (v: number) => (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 // linha de lançamento rápido, como digitar uma linha nova na planilha
-function LinhaRapida({ mes, visao, igrejaId, userId, salvo }: {
+function LinhaRapida({ mes, visao, igrejaId, userId, pessoas, contribuintes, novoContribuinte, salvo }: {
   mes: string; visao: 'tudo' | Fundo; igrejaId: string; userId: string; salvo: (l: Lancamento) => void
+  pessoas: Pessoa[]; contribuintes: Contribuinte[]; novoContribuinte: (c: Contribuinte) => void
 }) {
+  const [quem, setQuem] = useState('')
   const hoje = hojeISO()
   const padraoData = hoje.startsWith(mes) ? hoje : `${mes}-01`
   const [data, setData] = useState(padraoData)
@@ -411,14 +438,18 @@ function LinhaRapida({ mes, visao, igrejaId, userId, salvo }: {
     setSalvando(true); setErro('')
     const saida = tipo === 'saida'
     const desc = descricao.trim() || (tipo === 'dizimo' ? 'Dízimo(s)' : tipo === 'oferta' ? 'Oferta(s)' : null)
+    const contrib = (tipo === 'dizimo' || tipo === 'oferta') ? await resolverContribuinte(igrejaId, quem, contribuintes, pessoas) : null
+    if (contrib) novoContribuinte(contrib)
     const { data: l, error } = await supabase.from('lancamentos').insert({
       igreja_id: igrejaId, tipo, valor: v, data, forma: 'dinheiro', criado_por: userId, fundo,
-      descricao: desc, categoria: saida ? (categoria || adivinharCategoria(desc) || OUTRAS) : null, pessoa_id: null, nome: null,
+      descricao: desc, categoria: saida ? (categoria || adivinharCategoria(desc) || OUTRAS) : null,
+      pessoa_id: contrib?.pessoa_id ?? null, nome: !contrib && tipo === 'outro' ? quem.trim() || null : null,
+      ...(contrib ? { contribuinte_id: contrib.id } : {}),
     }).select().single()
     setSalvando(false)
     if (error || !l) { setErro('Não deu pra salvar.'); return }
     salvo(l as Lancamento)
-    setDescricao(''); setValor('')
+    setDescricao(''); setValor(''); setQuem('')
   }
 
   return (
@@ -431,6 +462,15 @@ function LinhaRapida({ mes, visao, igrejaId, userId, salvo }: {
         <option value="outro">Outra entrada</option>
         <option value="saida">Saída</option>
       </select>
+      {tipo !== 'saida' && (
+        <>
+          <input className="lr-quem" list="quem-rapido" value={quem} onChange={(e) => setQuem(e.target.value)} placeholder="Quem deu (opcional)" aria-label="Quem deu" />
+          <datalist id="quem-rapido">
+            {contribuintes.map((c) => <option key={c.id} value={rotuloContribuinte(c, pessoas)} />)}
+            {pessoas.filter((p) => !contribuintes.some((c) => c.pessoa_id === p.id)).map((p) => <option key={p.id} value={p.nome} />)}
+          </datalist>
+        </>
+      )}
       {tipo === 'saida' && (
         <select value={categoria} onChange={(e) => setCategoria(e.target.value)} aria-label="Categoria">
           <option value="">Categoria (automática)</option>

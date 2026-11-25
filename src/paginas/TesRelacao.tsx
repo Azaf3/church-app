@@ -16,6 +16,8 @@ export default function TesRelacao() {
   const { igreja, papel } = useSessao()
   const [contribuintes, setContribuintes] = useState<Contribuinte[] | null>(null)
   const [valores, setValores] = useState<Contribuicao[]>([])
+  const [doCaixa, setDoCaixa] = useState<Contribuicao[]>([])
+  const todosValores = useMemo(() => [...valores, ...doCaixa], [valores, doCaixa])
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
   const [ano, setAno] = useState(new Date().getFullYear())
   const [tipo, setTipo] = useState<Tipo>('dizimo')
@@ -26,10 +28,16 @@ export default function TesRelacao() {
 
   async function carregar() {
     if (!igreja || !podeFinanceiro(papel)) return
-    const [c, v] = await Promise.all([
+    const [c, v, l] = await Promise.all([
       buscarTudo<Contribuinte>((de, ate) => supabase.from('contribuintes').select('*').eq('igreja_id', igreja.id).order('codigo').order('id').range(de, ate)),
       buscarTudo<Contribuicao>((de, ate) => supabase.from('contribuicoes').select('*').eq('igreja_id', igreja.id).order('id').range(de, ate)),
+      // dízimos e ofertas lançados no caixa já com o contribuinte
+      buscarTudo<{ id: string; contribuinte_id: string; data: string; valor: number; tipo: string }>((de, ate) => supabase.from('lancamentos')
+        .select('id, contribuinte_id, data, valor, tipo').eq('igreja_id', igreja.id).not('contribuinte_id', 'is', null).order('id').range(de, ate)),
     ])
+    setDoCaixa(((l.data ?? []) as { id: string; contribuinte_id: string; data: string; valor: number; tipo: string }[])
+      .filter((x) => x.tipo === 'dizimo' || x.tipo === 'oferta')
+      .map((x) => ({ id: 'l:' + x.id, contribuinte_id: x.contribuinte_id, ano: Number(x.data.slice(0, 4)), mes: Number(x.data.slice(5, 7)), tipo: x.tipo as Tipo, valor: Number(x.valor) })))
     setContribuintes((c.data as Contribuinte[]) ?? [])
     setValores((v.data as Contribuicao[]) ?? [])
   }
@@ -40,10 +48,10 @@ export default function TesRelacao() {
       .then(({ data }) => setPessoas((data as Pessoa[]) ?? []))
   }, [igreja?.id])
 
-  const anos = useMemo(() => [...new Set([...valores.map((v) => v.ano), new Date().getFullYear()])].sort(), [valores])
+  const anos = useMemo(() => [...new Set([...todosValores.map((v) => v.ano), new Date().getFullYear()])].sort(), [todosValores])
 
   const r = useMemo(() => {
-    const doAno = valores.filter((v) => v.ano === ano && v.tipo === tipo)
+    const doAno = todosValores.filter((v) => v.ano === ano && v.tipo === tipo)
     const mapa = new Map<string, (number | null)[]>()
     for (const v of doAno) {
       const linha = mapa.get(v.contribuinte_id) ?? Array(12).fill(null)
@@ -55,7 +63,7 @@ export default function TesRelacao() {
     const ultimoMes = mesesComDado[mesesComDado.length - 1] ?? 0
     // quem é desta relação: tem valor neste tipo em algum ano, ou ainda não tem valor nenhum
     const tiposDe = new Map<string, Set<string>>()
-    for (const v of valores) tiposDe.set(v.contribuinte_id, (tiposDe.get(v.contribuinte_id) ?? new Set()).add(v.tipo))
+    for (const v of todosValores) tiposDe.set(v.contribuinte_id, (tiposDe.get(v.contribuinte_id) ?? new Set()).add(v.tipo))
     const daRelacao = (contribuintes ?? []).filter((c) => {
       const t = tiposDe.get(c.id)
       if (t) return t.has(tipo) // já contribuiu: aparece na relação do que deu
@@ -79,7 +87,7 @@ export default function TesRelacao() {
     const conta = (s: string) => linhas.filter((l) => l.situacao === s).length
     const nivel = (n: string) => linhas.filter((l) => l.nivel === n).length
     return { linhas, totMes, total: totMes.reduce((s, x) => s + x, 0), ultimoMes, atual, emDia: nivel('emdia'), atencao: nivel('atencao'), afastados: nivel('afastados'), fieis: conta('fieis'), irregulares: conta('irregulares'), nunca: conta('nunca') }
-  }, [contribuintes, valores, ano, tipo])
+  }, [contribuintes, todosValores, ano, tipo])
 
   if (!podeFinanceiro(papel)) return <p className="vazio">A tesouraria é visível só pra pastor, tesoureiro e administrador.</p>
   if (!contribuintes) return <div className="spinner" />
@@ -195,6 +203,7 @@ export default function TesRelacao() {
 
       <Folha titulo={celula ? `${nomeDe(celula.c)} · ${MES3[celula.mes - 1]}/${ano}` : ''} aberta={!!celula} fechar={() => setCelula(null)}>
         {celula && <FormValor key={celula.c.id + celula.mes} atual={valorCel} tipo={tipo}
+          doCaixa={doCaixa.filter((x) => x.contribuinte_id === celula.c.id && x.ano === ano && x.mes === celula.mes && x.tipo === tipo)}
           salvar={async (valor) => {
             if (valorCel && valor) await supabase.from('contribuicoes').update({ valor }).eq('id', valorCel.id)
             else if (valorCel) await supabase.from('contribuicoes').delete().eq('id', valorCel.id)
@@ -218,7 +227,7 @@ export default function TesRelacao() {
   )
 }
 
-function FormValor({ atual, tipo, salvar }: { atual?: Contribuicao; tipo: Tipo; salvar: (v: number | null) => Promise<void> }) {
+function FormValor({ atual, tipo, doCaixa, salvar }: { atual?: Contribuicao; tipo: Tipo; doCaixa: Contribuicao[]; salvar: (v: number | null) => Promise<void> }) {
   const [valor, setValor] = useState(atual ? String(atual.valor).replace('.', ',') : '')
   const [erro, setErro] = useState('')
   function enviar(e: FormEvent) {
@@ -229,10 +238,13 @@ function FormValor({ atual, tipo, salvar }: { atual?: Contribuicao; tipo: Tipo; 
   }
   return (
     <form className="form" onSubmit={enviar}>
-      <label>{tipo === 'dizimo' ? 'Dízimo' : 'Oferta'} do mês (R$)
+      {doCaixa.length > 0 && (
+        <p className="imp-saldo">Lançado no caixa neste mês: <b>{dinheiro(doCaixa.reduce((s, x) => s + x.valor, 0))}</b> ({doCaixa.length} {doCaixa.length === 1 ? 'lançamento' : 'lançamentos'}). Pra mudar, corrija na aba Mês.</p>
+      )}
+      <label>{doCaixa.length ? 'Valor a mais, fora do caixa (R$)' : `${tipo === 'dizimo' ? 'Dízimo' : 'Oferta'} do mês (R$)`}
         <input inputMode="decimal" autoFocus value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" />
       </label>
-      <p className="dica">Isto é só a relação de quem contribuiu. O caixa continua vindo dos lançamentos do mês.</p>
+      <p className="dica">Valor anotado só na relação (como na planilha). Pra entrar no caixa também, lance na aba Mês com o nome de quem deu.</p>
       {erro && <p className="erro">{erro}</p>}
       <button className="btn btn-primario">Salvar</button>
       {atual && <button type="button" className="btn btn-perigo" onClick={() => salvar(null)}>Tirar este valor</button>}
