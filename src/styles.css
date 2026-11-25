@@ -642,3 +642,31 @@ button.numero.ativo { border-color: var(--verde); box-shadow: inset 0 0 0 1px va
 .numeros.cinco .numero:first-child span, .numeros.cinco .numero:first-child small { color: var(--suave); }
 .numeros.cinco .numero:first-child strong { color: var(--verde-escuro); }
 .tesouraria .numero.saldo-caixa span, .tesouraria .numero.saldo-caixa small { color: rgba(255,255,255,.8); }
+/* livro-caixa do mês */
+.meses-ano { display: grid; gap: 8px; margin-bottom: 14px; }
+.ano-nav { display: flex; align-items: center; gap: 6px; }
+.ano-nav strong { font-size: 17px; min-width: 48px; text-align: center; }
+.meses-chips { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+@media (min-width: 700px) { .meses-chips { grid-template-columns: repeat(12, 1fr); } }
+.meses-chips button { padding: 7px 0; border-radius: 9px; border: 1px solid var(--linha); background: var(--papel); font: inherit; font-size: 13.5px; font-weight: 600; color: var(--suave); cursor: pointer; position: relative; }
+.meses-chips button.tem { color: var(--tinta); }
+.meses-chips button.tem::after { content: ''; position: absolute; bottom: 3px; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--verde); }
+.meses-chips button.ativo { background: var(--verde-escuro); border-color: var(--verde-escuro); color: #fff; }
+.meses-chips button.ativo::after { background: #fff; }
+.tabela-livro { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.tabela-livro th, .tabela-livro td { padding: 8px 8px; border-bottom: 1px solid var(--linha); text-align: right; white-space: nowrap; }
+.tabela-livro th { font-size: 12px; color: var(--suave); font-weight: 600; }
+.tabela-livro .esq { text-align: left; }
+.tabela-livro td.desc { white-space: normal; min-width: 180px; font-weight: 500; }
+.tabela-livro td.tipo { color: var(--suave); font-size: 12.5px; white-space: normal; min-width: 110px; }
+.tabela-livro td.pos { color: var(--verde); } .tabela-livro td.neg { color: #b4533a; }
+.tabela-livro tr.clicavel { cursor: pointer; }
+.tabela-livro tr.clicavel:hover td { background: var(--verde-claro); }
+.tabela-livro .linha-saldo td { color: var(--suave); font-style: italic; }
+.tabela-livro tfoot td { font-weight: 700; border-top: 2px solid var(--linha); }
+.linha-rapida { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; padding: 10px; background: var(--verde-claro); border-radius: 12px; align-items: center; }
+.linha-rapida input, .linha-rapida select { margin: 0; width: auto; padding: 8px 10px; font: inherit; font-size: 14px; border-radius: 9px; border: 1px solid var(--linha); background: #fff; }
+.linha-rapida .lr-desc { flex: 1; min-width: 180px; }
+.linha-rapida .lr-valor { width: 110px; }
+.linha-rapida .erro { width: 100%; margin: 0; }
+@media print { .tabela-livro { font-size: 10.5px; } }

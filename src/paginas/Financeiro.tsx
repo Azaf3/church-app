@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import type { Lancamento, Pessoa } from '../lib/tipos'
 import { MESES, dataBR, dinheiro, hojeISO, podeFinanceiro } from '../lib/util'
-import { ENTRADAS, FORMAS, FUNDOS, NOMES_CATEGORIAS, OUTRAS, ehEntrada, ehSaida, ehSaldoInicial, mesCurto, mesesAte, somar, type Fundo } from '../lib/tesouraria'
+import { ENTRADAS, FORMAS, FUNDOS, NOMES_CATEGORIAS, OUTRAS, adivinharCategoria, ehEntrada, ehSaida, ehSaldoInicial, mesCurto, mesesAte, somar, type Fundo } from '../lib/tesouraria'
 import Folha from '../componentes/Folha'
 import Icone from '../componentes/Icone'
 import TesAbas from '../componentes/TesAbas'
@@ -69,10 +69,6 @@ export default function Financeiro() {
   }
 
   const [a, m] = mes.split('-').map(Number)
-  const mudarMes = (d: number) => {
-    const n = new Date(a, m - 1 + d, 1)
-    setMes(`${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`)
-  }
   const nomeDe = (l: Lancamento) => pessoas.find((p) => p.id === l.pessoa_id)?.nome ?? l.nome
   const resultado = contas.totEnt - contas.totSai
   const maiorMes = Math.max(1, ...contas.meses.flatMap((x) => [x.ent, x.sai]))
@@ -81,6 +77,15 @@ export default function Financeiro() {
   const lista = contas.doMes
     .filter((l) => filtro === 'tudo' || (filtro === 'saidas' ? ehSaida(l) : !ehSaida(l)))
     .filter((l) => !t || [nomeDe(l), l.descricao, l.categoria].some((x) => x?.toLowerCase().includes(t)))
+  // livro-caixa: em ordem de data, com saldo correndo a partir do saldo anterior
+  const doCaixa = (todos ?? []).filter((l) => visao === 'tudo' || (l.fundo ?? 'geral') === visao)
+  const antes = doCaixa.filter((l) => l.data < `${mes}-01`)
+  const saldoAnterior = somar(antes.filter((l) => !ehSaida(l))) - somar(antes.filter(ehSaida))
+  const livroFiltrado = filtro !== 'tudo' || !!t
+  let corre = saldoAnterior
+  const livro = [...contas.doMes].sort((x, y) => x.data.localeCompare(y.data))
+    .map((l) => { corre += ehSaida(l) ? -Number(l.valor) : Number(l.valor); return { l, saldo: corre } })
+    .filter(({ l }) => lista.includes(l))
   const vazio = todos !== null && todos.length === 0
   const campanhas = [...new Set((todos ?? []).map((l) => l.campanha?.trim()).filter(Boolean) as string[])].sort()
 
@@ -120,10 +125,23 @@ export default function Financeiro() {
             <p className="aviso-caixa">{FUNDOS[visao]} gastou {dinheiro(-saldos[visao])} a mais do que arrecadou até aqui. Essa diferença foi coberta pelo caixa geral.</p>
           )}
 
-          <div className="mes sem-impressao">
-            <button className="btn-icone" onClick={() => mudarMes(-1)} aria-label="Mês anterior"><Icone nome="voltar" /></button>
-            <strong>{MESES[m - 1]} {a}</strong>
-            <button className="btn-icone" onClick={() => mudarMes(1)} aria-label="Próximo mês"><Icone nome="seta" /></button>
+          <div className="meses-ano sem-impressao">
+            <div className="ano-nav">
+              <button className="btn-icone" onClick={() => setMes(`${a - 1}-${String(m).padStart(2, '0')}`)} aria-label="Ano anterior"><Icone nome="voltar" /></button>
+              <strong>{a}</strong>
+              <button className="btn-icone" onClick={() => setMes(`${a + 1}-${String(m).padStart(2, '0')}`)} aria-label="Próximo ano"><Icone nome="seta" /></button>
+            </div>
+            <div className="meses-chips">
+              {MESES.map((nome, i) => {
+                const ym = `${a}-${String(i + 1).padStart(2, '0')}`
+                const tem = (todos ?? []).some((l) => l.data.startsWith(ym))
+                return (
+                  <button key={ym} className={(ym === mes ? 'ativo ' : '') + (tem ? 'tem' : '')} onClick={() => setMes(ym)}>
+                    {nome.slice(0, 3)}
+                  </button>
+                )
+              })}
+            </div>
           </div>
           <p className="so-impressao">{igreja?.nome} · Tesouraria{visao !== 'tudo' ? ` · ${FUNDOS[visao]}` : ''} · {MESES[m - 1]} de {a}</p>
 
@@ -192,9 +210,9 @@ export default function Financeiro() {
             </section>
           </div>
 
-          <section className="painel">
+          <section className="painel livro">
             <div className="lista-topo">
-              <h2>Lançamentos de {MESES[m - 1].toLowerCase()}</h2>
+              <h2>Livro-caixa de {MESES[m - 1].toLowerCase()}{visao !== 'tudo' ? ` · ${FUNDOS[visao]}` : ''}</h2>
               <button className="btn btn-mini sem-impressao" onClick={() => window.print()}>Imprimir / PDF</button>
             </div>
             <div className="lista-filtros sem-impressao">
@@ -205,26 +223,39 @@ export default function Financeiro() {
               </div>
               <input className="busca" type="search" placeholder="Buscar nome ou descrição" value={busca} onChange={(e) => setBusca(e.target.value)} />
             </div>
-            {lista.length === 0 && <p className="vazio">Nada por aqui.</p>}
-            <ul className="lista plana">
-              {lista.map((l) => (
-                <li key={l.id}>
-                  <button className="item" onClick={() => setEditando(l)}>
-                    <span className="hora">{dataBR(l.data)}</span>
-                    <div className="item-texto">
-                      <strong>{ehSaldoInicial(l) ? (l.descricao || 'Saldo inicial') : ehSaida(l) ? (l.descricao || l.nome || l.categoria || 'Saída') : (nomeDe(l) || l.descricao || 'Anônimo')}</strong>
-                      <span>
-                        {ehSaldoInicial(l) ? 'Saldo inicial' : ehSaida(l) ? (l.categoria || OUTRAS) : ENTRADAS[l.tipo as keyof typeof ENTRADAS]}
-                        {!ehSaldoInicial(l) && ` · ${FORMAS[l.forma]}`}
-                        {visao === 'tudo' && (l.fundo ?? 'geral') !== 'geral' && <em className="tag-fundo"> · {FUNDOS[l.fundo]}</em>}
+            <div className="tabela-rolar">
+              <table className="tabela-livro">
+                <thead>
+                  <tr><th>Data</th><th className="esq">Descrição</th><th className="esq">Tipo</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr>
+                </thead>
+                <tbody>
+                  <tr className="linha-saldo"><td /><td className="esq" colSpan={2}>Saldo anterior</td><td /><td /><td>{num(saldoAnterior)}</td></tr>
+                  {livro.map(({ l, saldo }) => (
+                    <tr key={l.id} onClick={() => setEditando(l)} className="clicavel">
+                      <td>{dataBR(l.data).slice(0, 5)}</td>
+                      <td className="esq desc">
+                        {ehSaldoInicial(l) ? (l.descricao || 'Saldo inicial') : ehSaida(l) ? (l.descricao || l.nome || l.categoria || 'Saída') : (nomeDe(l) || l.descricao || 'Entrada')}
                         {l.campanha && <em className="tag-fundo"> · {l.campanha}</em>}
-                      </span>
-                    </div>
-                    <strong className={'valor ' + (ehSaida(l) ? 'neg' : 'pos')}>{ehSaida(l) ? '−' : '+'} {dinheiro(Number(l.valor))}</strong>
-                  </button>
-                </li>
-              ))}
-            </ul>
+                      </td>
+                      <td className="esq tipo">
+                        {ehSaldoInicial(l) ? 'Saldo inicial' : ehSaida(l) ? (l.categoria || OUTRAS) : ENTRADAS[l.tipo as keyof typeof ENTRADAS]}
+                        {visao === 'tudo' && (l.fundo ?? 'geral') !== 'geral' && <em className="tag-fundo"> · {FUNDOS[l.fundo]}</em>}
+                      </td>
+                      <td className="pos">{ehSaida(l) ? '' : num(Number(l.valor))}</td>
+                      <td className="neg">{ehSaida(l) ? num(Number(l.valor)) : ''}</td>
+                      <td className={saldo < 0 ? 'neg' : ''}>{livroFiltrado ? '' : num(saldo)}</td>
+                    </tr>
+                  ))}
+                  {livro.length === 0 && <tr><td colSpan={6} className="vazio">Nenhum lançamento neste mês ainda.</td></tr>}
+                </tbody>
+                <tfoot>
+                  <tr><td /><td className="esq" colSpan={2}>Total do mês</td><td className="pos">{num(contas.totEnt)}</td><td className="neg">{num(contas.totSai)}</td><td>{num(contas.saldo)}</td></tr>
+                </tfoot>
+              </table>
+            </div>
+            <LinhaRapida mes={mes} visao={visao} igrejaId={igreja!.id} userId={userId!}
+              salvo={(l) => setTodos([...(todos ?? []), l])} />
+            <p className="dica sem-impressao">Toque numa linha pra corrigir ou apagar.</p>
           </section>
         </>
       )}
@@ -347,6 +378,70 @@ function FormLancamento({ modo, inicial, fundoPadrao = 'geral', igrejaId, userId
               <button type="button" className="btn" onClick={() => setConfirmar(false)}>Cancelar</button></div>
           </div>
         ))}
+    </form>
+  )
+}
+
+const num = (v: number) => (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+// linha de lançamento rápido, como digitar uma linha nova na planilha
+function LinhaRapida({ mes, visao, igrejaId, userId, salvo }: {
+  mes: string; visao: 'tudo' | Fundo; igrejaId: string; userId: string; salvo: (l: Lancamento) => void
+}) {
+  const hoje = hojeISO()
+  const padraoData = hoje.startsWith(mes) ? hoje : `${mes}-01`
+  const [data, setData] = useState(padraoData)
+  const [descricao, setDescricao] = useState('')
+  const [tipo, setTipo] = useState<'dizimo' | 'oferta' | 'outro' | 'saida'>('dizimo')
+  const [categoria, setCategoria] = useState('')
+  const [valor, setValor] = useState('')
+  const [fundo, setFundo] = useState<Fundo>(visao === 'tudo' ? 'geral' : visao)
+  const [erro, setErro] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  useEffect(() => { setData(hoje.startsWith(mes) ? hoje : `${mes}-01`) }, [mes])
+  useEffect(() => { if (visao !== 'tudo') setFundo(visao) }, [visao])
+
+  async function enviar(e: FormEvent) {
+    e.preventDefault()
+    const v = Number(valor.replace(/\./g, '').replace(',', '.'))
+    if (!v || v <= 0) { setErro('Valor inválido.'); return }
+    setSalvando(true); setErro('')
+    const saida = tipo === 'saida'
+    const desc = descricao.trim() || (tipo === 'dizimo' ? 'Dízimo(s)' : tipo === 'oferta' ? 'Oferta(s)' : null)
+    const { data: l, error } = await supabase.from('lancamentos').insert({
+      igreja_id: igrejaId, tipo, valor: v, data, forma: 'dinheiro', criado_por: userId, fundo,
+      descricao: desc, categoria: saida ? (categoria || adivinharCategoria(desc) || OUTRAS) : null, pessoa_id: null, nome: null,
+    }).select().single()
+    setSalvando(false)
+    if (error || !l) { setErro('Não deu pra salvar.'); return }
+    salvo(l as Lancamento)
+    setDescricao(''); setValor('')
+  }
+
+  return (
+    <form className="linha-rapida sem-impressao" onSubmit={enviar}>
+      <input type="date" value={data} onChange={(e) => setData(e.target.value)} required aria-label="Data" />
+      <input className="lr-desc" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descrição (ex.: Dízimo(s), Neoenergia)" aria-label="Descrição" />
+      <select value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} aria-label="Tipo">
+        <option value="dizimo">Dízimo</option>
+        <option value="oferta">Oferta</option>
+        <option value="outro">Outra entrada</option>
+        <option value="saida">Saída</option>
+      </select>
+      {tipo === 'saida' && (
+        <select value={categoria} onChange={(e) => setCategoria(e.target.value)} aria-label="Categoria">
+          <option value="">Categoria (automática)</option>
+          {NOMES_CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      )}
+      {visao === 'tudo' && (
+        <select value={fundo} onChange={(e) => setFundo(e.target.value as Fundo)} aria-label="Caixa">
+          {(Object.keys(FUNDOS) as Fundo[]).map((f) => <option key={f} value={f}>{FUNDOS[f]}</option>)}
+        </select>
+      )}
+      <input className="lr-valor" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="Valor" aria-label="Valor" required />
+      <button className={'btn ' + (tipo === 'saida' ? 'btn-saida-cheio' : 'btn-primario')} disabled={salvando}>{salvando ? '…' : '+ Lançar'}</button>
+      {erro && <p className="erro">{erro}</p>}
     </form>
   )
 }
