@@ -595,7 +595,7 @@ body { background: var(--fundo); }
 .tes-abas a.ativa { color: var(--verde-escuro); border-bottom-color: var(--verde); }
 .sel-ano { width: auto; padding: 8px 12px; font: inherit; font-weight: 700; border-radius: 10px; border: 1px solid var(--linha); background: var(--papel); }
 .numeros.cinco { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (min-width: 900px) { .numeros.cinco { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .numeros.cinco { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); } }
 .grafico-ano { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; height: 220px; align-items: end; }
 .ga-mes { display: grid; grid-template-rows: 1fr auto; gap: 6px; height: 100%; text-align: center; }
 .ga-mes span { font-size: 12px; color: var(--suave); }
@@ -676,3 +676,5 @@ button.numero.ativo { border-color: var(--verde); box-shadow: inset 0 0 0 1px va
 .sit-tag.ok { background: var(--verde-claro); color: var(--verde); }
 .sit-tag.atraso { background: #fbe3dc; color: #b4533a; }
 .sit-tag.cinza { background: #eceeec; color: var(--suave); }
+.sit-tag.aviso { background: var(--ambar-claro); color: #9a6a12; }
+strong.ambar { color: #b98216; }

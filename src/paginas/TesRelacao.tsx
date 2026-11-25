@@ -18,7 +18,7 @@ export default function TesRelacao() {
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
   const [ano, setAno] = useState(new Date().getFullYear())
   const [tipo, setTipo] = useState<Tipo>('dizimo')
-  const [filtro, setFiltro] = useState<'todos' | 'fieis' | 'irregulares' | 'nunca' | 'emdia' | 'inadimplentes'>('todos')
+  const [filtro, setFiltro] = useState<'todos' | 'fieis' | 'irregulares' | 'nunca' | 'emdia' | 'atencao' | 'afastados'>('todos')
   const [busca, setBusca] = useState('')
   const [celula, setCelula] = useState<{ c: Contribuinte; mes: number } | null>(null)
   const [ficha, setFicha] = useState<Contribuinte | 'novo' | null>(null)
@@ -62,23 +62,22 @@ export default function TesRelacao() {
       if (/\(ofertas\)$/.test(c.codigo)) return tipo === 'oferta'
       return true // sem valor nenhum ainda: aparece nas duas
     })
-    // adimplência: em dia = contribuiu no mês de referência (o mês passado) ou depois
+    // situação do dizimista: em dia (deu neste mês ou no passado), atenção (último há 2 meses), afastado (3 meses ou mais)
     const hoje = new Date()
-    const refMes = ano < hoje.getFullYear() ? 12 : ano > hoje.getFullYear() ? 0 : Math.max(1, Math.min(hoje.getMonth(), ultimoMes || hoje.getMonth()))
+    const atual = ano < hoje.getFullYear() ? 12 : ano > hoje.getFullYear() ? 1 : hoje.getMonth() + 1
     const linhas = daRelacao.map((c) => {
       const vals = mapa.get(c.id) ?? Array(12).fill(null)
       const meses = vals.filter((x) => x).length
       const total = vals.reduce((s: number, x) => s + (x ?? 0), 0)
       const situacao = meses === 0 ? 'nunca' : ultimoMes && meses >= Math.ceil(ultimoMes * 0.75) ? 'fieis' : 'irregulares'
       const ultimo = vals.reduce((u: number, x, k) => (x ? k + 1 : u), 0)
-      const emDia = meses > 0 && ultimo >= refMes
-      return { c, vals, meses, total, situacao, ultimo, emDia }
+      const nivel = meses === 0 ? 'nunca' : ultimo >= atual - 1 ? 'emdia' : ultimo === atual - 2 ? 'atencao' : 'afastados'
+      return { c, vals, meses, total, situacao, ultimo, nivel }
     })
     const totMes = Array.from({ length: 12 }, (_, k) => linhas.reduce((s, l) => s + (l.vals[k] ?? 0), 0))
     const conta = (s: string) => linhas.filter((l) => l.situacao === s).length
-    const emDia = linhas.filter((l) => l.emDia).length
-    const inadimplentes = linhas.filter((l) => l.meses > 0 && !l.emDia).length
-    return { linhas, totMes, total: totMes.reduce((s, x) => s + x, 0), ultimoMes, refMes, emDia, inadimplentes, fieis: conta('fieis'), irregulares: conta('irregulares'), nunca: conta('nunca') }
+    const nivel = (n: string) => linhas.filter((l) => l.nivel === n).length
+    return { linhas, totMes, total: totMes.reduce((s, x) => s + x, 0), ultimoMes, atual, emDia: nivel('emdia'), atencao: nivel('atencao'), afastados: nivel('afastados'), fieis: conta('fieis'), irregulares: conta('irregulares'), nunca: conta('nunca') }
   }, [contribuintes, valores, ano, tipo])
 
   if (!podeFinanceiro(papel)) return <p className="vazio">A tesouraria é visível só pra pastor, tesoureiro e administrador.</p>
@@ -87,7 +86,7 @@ export default function TesRelacao() {
   const nomeDe = (c: Contribuinte) => pessoas.find((p) => p.id === c.pessoa_id)?.nome ?? c.nome ?? c.codigo
   const t = busca.trim().toLowerCase()
   const lista = r.linhas
-    .filter((l) => filtro === 'todos' || (filtro === 'emdia' ? l.emDia : filtro === 'inadimplentes' ? l.meses > 0 && !l.emDia : l.situacao === filtro))
+    .filter((l) => filtro === 'todos' || (['emdia', 'atencao', 'afastados'].includes(filtro) ? l.nivel === filtro : l.situacao === filtro))
     .filter((l) => !t || [nomeDe(l.c), l.c.codigo].some((x) => x.toLowerCase().includes(t)))
     .sort((a, b) => b.total - a.total || nomeDe(a.c).localeCompare(nomeDe(b.c)))
   const maior = Math.max(1, ...r.totMes)
@@ -128,9 +127,11 @@ export default function TesRelacao() {
             {tipo === 'dizimo' ? (
               <>
                 <button className={'numero' + (filtro === 'emdia' ? ' ativo' : '')} onClick={() => setFiltro(filtro === 'emdia' ? 'todos' : 'emdia')}>
-                  <span>Adimplentes</span><strong className="pos">{r.emDia}</strong><small>em dia: deram em {MES3[Math.max(0, r.refMes - 1)]} ou depois</small></button>
-                <button className={'numero' + (filtro === 'inadimplentes' ? ' ativo' : '')} onClick={() => setFiltro(filtro === 'inadimplentes' ? 'todos' : 'inadimplentes')}>
-                  <span>Inadimplentes</span><strong className={r.inadimplentes ? 'neg' : ''}>{r.inadimplentes}</strong><small>deram este ano, mas não desde {MES3[Math.max(0, r.refMes - 1)]}</small></button>
+                  <span>🟢 Em dia</span><strong className="pos">{r.emDia}</strong><small>deram em {MES3[Math.max(0, r.atual - 2)]} ou {MES3[r.atual - 1]}</small></button>
+                <button className={'numero' + (filtro === 'atencao' ? ' ativo' : '')} onClick={() => setFiltro(filtro === 'atencao' ? 'todos' : 'atencao')}>
+                  <span>🟡 Atenção</span><strong className="ambar">{r.atencao}</strong><small>último dízimo há 2 meses</small></button>
+                <button className={'numero' + (filtro === 'afastados' ? ' ativo' : '')} onClick={() => setFiltro(filtro === 'afastados' ? 'todos' : 'afastados')}>
+                  <span>🔴 Afastados do dízimo</span><strong className={r.afastados ? 'neg' : ''}>{r.afastados}</strong><small>3 meses ou mais sem dízimo</small></button>
               </>
             ) : (
               <>
@@ -159,7 +160,7 @@ export default function TesRelacao() {
 
           <section className="painel">
             <div className="lista-topo">
-              <h2>Relação {filtro !== 'todos' && <small className="suave">· {({ fieis: 'fiéis', nunca: 'sem contribuição', irregulares: 'irregulares', emdia: 'adimplentes', inadimplentes: 'inadimplentes' } as Record<string, string>)[filtro]}</small>}</h2>
+              <h2>Relação {filtro !== 'todos' && <small className="suave">· {({ fieis: 'fiéis', nunca: 'sem contribuição', irregulares: 'irregulares', emdia: 'em dia', atencao: 'atenção', afastados: 'afastados do dízimo' } as Record<string, string>)[filtro]}</small>}</h2>
               <input className="busca sem-impressao" type="search" placeholder="Buscar nome ou código" value={busca} onChange={(e) => setBusca(e.target.value)} />
             </div>
             <p className="dica sem-impressao">Toque num mês pra lançar, corrigir ou tirar um valor. Toque no nome pra ligar à ficha da pessoa.</p>
@@ -171,9 +172,9 @@ export default function TesRelacao() {
                     <tr key={l.c.id}>
                       <th><button className="link-nome" onClick={() => setFicha(l.c)}>{nomeDe(l.c)}{l.c.pessoa_id || l.c.nome ? <small>{l.c.codigo}</small> : null}</button></th>
                       {tipo === 'dizimo' && (
-                        <td className="esq sit-td">{l.meses === 0 ? <span className="sit-tag cinza">sem dízimo</span>
-                          : l.emDia ? <span className="sit-tag ok">em dia</span>
-                            : <span className="sit-tag atraso">desde {MES3[l.ultimo - 1]}</span>}</td>
+                        <td className="esq sit-td">{l.nivel === 'nunca' ? <span className="sit-tag cinza">sem dízimo</span>
+                          : l.nivel === 'emdia' ? <span className="sit-tag ok">em dia</span>
+                            : <span className={'sit-tag ' + (l.nivel === 'atencao' ? 'aviso' : 'atraso')}>desde {MES3[l.ultimo - 1]}</span>}</td>
                       )}
                       {l.vals.map((v, k) => (
                         <td key={k}><button className={'cel' + (v ? ' cheia' : '')} onClick={() => setCelula({ c: l.c, mes: k + 1 })}>{v ? numero(v) : '·'}</button></td>
