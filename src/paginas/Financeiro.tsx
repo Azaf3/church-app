@@ -77,7 +77,7 @@ export default function Financeiro() {
       const c = l.categoria || OUTRAS; acc[c] = (acc[c] ?? 0) + Number(l.valor); return acc
     }, {})).sort((a, b) => b[1] - a[1])
     const porTipo = (['dizimo', 'oferta', 'outro'] as const).map((t) => ({ t, v: somar(ent.filter((l) => l.tipo === t)) }))
-    const dizimistas = new Set(ent.filter((l) => l.tipo === 'dizimo').map((l) => l.pessoa_id ?? l.nome)).size
+    const dizimistas = new Set(ent.filter((l) => l.tipo === 'dizimo').map((l) => l.contribuinte_id ?? l.pessoa_id ?? l.nome)).size
     return { doMes, ent, sai, saldo, meses, porCategoria, porTipo, dizimistas, totEnt: somar(ent), totSai: somar(sai) }
   }, [todos, mes, visao, saldos])
 

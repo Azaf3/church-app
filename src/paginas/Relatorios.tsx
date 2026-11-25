@@ -12,6 +12,7 @@ interface Dados {
   lancAnterior: number
   contatos: number
   visitas: number
+  dizimistasRelacao: string[]
 }
 
 export default function Relatorios() {
@@ -33,13 +34,15 @@ export default function Relatorios() {
     const iniTs = new Date(`${ini}T00:00:00`).toISOString()
     const fimTs = new Date(`${fim}T23:59:59`).toISOString()
     ;(async () => {
-      const [p, c, l, la, k, ag] = await Promise.all([
+      const [p, c, l, la, k, ag, rel] = await Promise.all([
         supabase.from('pessoas').select('*').eq('igreja_id', id),
         supabase.from('cultos').select('*').eq('igreja_id', id).gte('data', ini).lte('data', fim).order('data'),
         fin ? supabase.from('lancamentos').select('*').eq('igreja_id', id).gte('data', ini).lte('data', fim) : Promise.resolve({ data: [] }),
         fin ? supabase.from('lancamentos').select('valor').eq('igreja_id', id).in('tipo', ['dizimo', 'oferta', 'outro']).gte('data', `${mesAnt}-01`).lte('data', `${mesAnt}-31`) : Promise.resolve({ data: [] }),
         supabase.from('contatos').select('id').eq('igreja_id', id).gte('criado_em', iniTs).lte('criado_em', fimTs),
         supabase.from('agenda').select('id').eq('igreja_id', id).eq('feito', true).gte('inicio', iniTs).lte('inicio', fimTs),
+        // dizimistas do mês na relação (planilha), quando o caixa não diz quem deu
+        fin ? supabase.from('contribuicoes').select('contribuinte_id').eq('igreja_id', id).eq('tipo', 'dizimo').eq('ano', Number(ini.slice(0, 4))).eq('mes', Number(ini.slice(5, 7))) : Promise.resolve({ data: [] }),
       ])
       const cultos = (c.data ?? []) as Culto[]
       const comPresenca = await Promise.all(cultos.map(async (cu) => {
@@ -53,6 +56,7 @@ export default function Relatorios() {
         lancAnterior: ((la.data ?? []) as { valor: number }[]).reduce((s, x) => s + Number(x.valor), 0),
         contatos: (k.data ?? []).length,
         visitas: (ag.data ?? []).length,
+        dizimistasRelacao: ((rel.data ?? []) as { contribuinte_id: string }[]).map((x) => x.contribuinte_id),
       })
     })()
   }, [igreja?.id, mes, fin])
@@ -94,7 +98,10 @@ export default function Relatorios() {
   const totalMes = d.lancamentos.filter((l) => l.tipo !== 'saida' && l.tipo !== 'saldo_inicial').reduce((s, l) => s + Number(l.valor), 0)
   const saidasMes = d.lancamentos.filter((l) => l.tipo === 'saida').reduce((s, l) => s + Number(l.valor), 0)
   const variacao = d.lancAnterior ? Math.round(((totalMes - d.lancAnterior) / d.lancAnterior) * 100) : null
-  const dizimistas = new Set(d.lancamentos.filter((l) => l.tipo === 'dizimo' && l.pessoa_id).map((l) => l.pessoa_id)).size
+  const dizimistas = new Set([
+    ...d.lancamentos.filter((l) => l.tipo === 'dizimo' && (l.contribuinte_id || l.pessoa_id)).map((l) => l.contribuinte_id ?? l.pessoa_id),
+    ...d.dizimistasRelacao,
+  ]).size
 
   return (
     <div className="relatorio">

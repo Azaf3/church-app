@@ -873,3 +873,20 @@ span.fixa-valor { width: 110px; text-align: right; color: var(--suave); font-var
 .fech-saldo small { color: var(--suave); }
 .fech-ok { margin: 0; color: var(--verde); font-weight: 600; }
 .fech-dif { margin: 0; color: #9a6a12; background: var(--ambar-claro); padding: 10px 12px; border-radius: 10px; font-size: 14px; }
+/* blocos lado a lado (Relatórios, Configurações): uma superfície só, divisórias de 1px, alturas iguais */
+.colunas, .config { gap: 1px; background: var(--linha); border: 1px solid var(--linha); border-radius: 20px; overflow: hidden; align-items: stretch; margin-bottom: 16px; }
+.colunas > .painel, .config > .painel { border: none; border-radius: 0; margin: 0; background: var(--papel); }
+@media (min-width: 900px) {
+  .colunas, .relatorio .colunas { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
+  .colunas > :last-child:nth-child(odd), .config > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+.cartoes-hoje { align-items: stretch; }
+@media print { .colunas, .config { background: #fff; gap: 0; } .colunas > .painel { border: 1px solid #ddd !important; } }
+/* listas em grade (Pessoas, Agenda, Equipe, SETE...): um bloco só com divisórias, linhas da mesma altura */
+.lista:not(.plana):not(.agrupada) { gap: 0; background: var(--papel); border: 1px solid var(--linha); border-radius: 20px; overflow: hidden; }
+.lista:not(.plana):not(.agrupada) > li { display: flex; }
+.lista:not(.plana):not(.agrupada) > li > .item, .lista:not(.plana):not(.agrupada) > .item { border: none; border-radius: 0; box-shadow: 1px 0 0 var(--linha), 0 1px 0 var(--linha); background: transparent; width: 100%; }
+.lista:not(.plana):not(.agrupada) .item:hover { background: #f6f8f6; }
+@media (min-width: 900px) { .lista:not(.plana):not(.agrupada) { align-items: stretch; } }
+/* títulos de seção sem caixa alta */
+.secao { text-transform: none; letter-spacing: 0; font-family: var(--titulo); font-size: 16px; font-weight: 600; color: var(--verde-escuro); margin: 24px 0 10px; }
