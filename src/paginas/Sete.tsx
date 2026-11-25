@@ -6,6 +6,7 @@ import type { Pessoa } from '../lib/tipos'
 import { MESES, dataBR, dinheiro, hojeISO, podeFinanceiro } from '../lib/util'
 import Folha from '../componentes/Folha'
 import Icone from '../componentes/Icone'
+import BotaoWhats from '../componentes/BotaoWhats'
 
 interface Turma {
   id: string; nome: string; inicio: string; meses: number
@@ -77,8 +78,16 @@ export default function Sete() {
     const vencidas = refs.filter((r) => r === MATRICULA || r <= mesAtual)
     const pendentes = ativos.flatMap((a) => vencidas.filter((r) => !pg(a.id, r)).map((r) => ({ a, r })))
     const porMes = Object.fromEntries(refs.map((r) => [r, pagamentos.filter((p) => p.referencia === r && p.situacao === 'pago').reduce((s, p) => s + Number(p.valor ?? 0), 0)]))
-    return { recebido, pendentes, porMes }
-  }, [pagamentos, refs, ativos, mesAtual])
+    // adimplência: matrícula + mensalidades de meses que já passaram
+    const venceu = refs.filter((r) => r === MATRICULA || r < mesAtual)
+    const situacao = ativos.map((a) => {
+      const atraso = venceu.filter((r) => !pg(a.id, r))
+      const devido = atraso.reduce((s, r) => s + Number((r === MATRICULA ? turma?.valor_matricula : turma?.valor_mensalidade) ?? 0), 0)
+      return { a, atraso, devido }
+    })
+    const inadimplentes = situacao.filter((x) => x.atraso.length).sort((x, y) => y.atraso.length - x.atraso.length)
+    return { recebido, pendentes, porMes, situacao, inadimplentes, adimplentes: situacao.length - inadimplentes.length, emAtraso: inadimplentes.reduce((s, x) => s + x.devido, 0) }
+  }, [pagamentos, refs, ativos, mesAtual, turma])
 
   if (!podeFinanceiro(papel)) return <p className="vazio">O controle do SETE é visível só pra tesoureiro, pastor e administrador.</p>
   if (turmas === null) return <div className="spinner" />
@@ -111,11 +120,30 @@ export default function Sete() {
           )}
 
           <div className="numeros">
-            <div className="numero"><span>Alunos ativos</span><strong>{ativos.length}</strong><small>{outros.length ? `${outros.length} desistiram ou concluíram` : turma?.nome}</small></div>
-            <div className="numero"><span>Recebido</span><strong className="valor pos">{dinheiro(resumo.recebido)}</strong><small>matrículas e mensalidades</small></div>
-            <div className="numero"><span>Em aberto</span><strong className={resumo.pendentes.length ? 'neg' : ''}>{resumo.pendentes.length}</strong><small>mensalidades até {rotuloRef(mesAtual)}</small></div>
-            <div className="numero"><span>Mensalidade</span><strong className="valor">{turma?.valor_mensalidade ? dinheiro(Number(turma.valor_mensalidade)) : '—'}</strong><small>matrícula {turma?.valor_matricula ? dinheiro(Number(turma.valor_matricula)) : '—'}</small></div>
+            <div className="numero"><span>Recebido</span><strong className="valor pos">{dinheiro(resumo.recebido)}</strong><small>mensalidade {turma?.valor_mensalidade ? dinheiro(Number(turma.valor_mensalidade)) : '—'} · matrícula {turma?.valor_matricula ? dinheiro(Number(turma.valor_matricula)) : '—'}</small></div>
+            <div className="numero"><span>Adimplentes</span><strong className="pos">{resumo.adimplentes}</strong><small>em dia, de {ativos.length} alunos ativos</small></div>
+            <div className="numero"><span>Inadimplentes</span><strong className={resumo.inadimplentes.length ? 'neg' : ''}>{resumo.inadimplentes.length}</strong><small>com mensalidade vencida em aberto</small></div>
+            <div className="numero"><span>Valor em atraso</span><strong className={'valor ' + (resumo.emAtraso ? 'neg' : '')}>{dinheiro(resumo.emAtraso)}</strong><small>{resumo.inadimplentes.reduce((s, x) => s + x.atraso.length, 0)} parcelas vencidas</small></div>
           </div>
+
+          {resumo.inadimplentes.length > 0 && (
+            <section className="painel">
+              <h2>Inadimplentes</h2>
+              <ul className="lista plana">
+                {resumo.inadimplentes.map(({ a, atraso, devido }) => (
+                  <li key={a.id} className="item">
+                    <div className="item-texto">
+                      <strong>{a.nome}</strong>
+                      <span>{atraso.length} em aberto: {atraso.map(rotuloRef).join(', ')}</span>
+                    </div>
+                    {devido > 0 && <strong className="valor neg">{dinheiro(devido)}</strong>}
+                    <BotaoWhats telefone={a.telefone}
+                      texto={`Oi ${a.nome.split(' ')[0]}, tudo bem? Passando pra lembrar do SETE: consta em aberto ${atraso.map(rotuloRef).join(', ')}${devido ? ` (${dinheiro(devido)})` : ''}. Qualquer dúvida, me chama!`} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <section className="painel">
             <h2>Pagamentos</h2>
@@ -132,7 +160,9 @@ export default function Sete() {
                   <tbody>
                     {ativos.map((a) => (
                       <tr key={a.id}>
-                        <th className="fixa"><button className="aluno-nome" onClick={() => setEditAluno(a)}>{a.nome}</button></th>
+                        <th className="fixa"><button className="aluno-nome" onClick={() => setEditAluno(a)}>{a.nome}
+                          {(() => { const x = resumo.situacao.find((y) => y.a.id === a.id); return x?.atraso.length ? <small className="sit neg">{x.atraso.length} em atraso</small> : <small className="sit pos">em dia</small> })()}
+                        </button></th>
                         {refs.map((r) => {
                           const p = pg(a.id, r)
                           const atrasado = !p && (r === MATRICULA || r < mesAtual)
