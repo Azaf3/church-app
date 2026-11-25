@@ -30,7 +30,7 @@ export default function Jornada() {
   return (
     <>
       <h1 className="titulo">Jornada dos visitantes</h1>
-      <p className="suave">Do primeiro culto até servir. Toque em “Avançar” quando o passo for dado.</p>
+      <p className="suave">Visitantes cadastrados pela secretaria, do primeiro culto até servir. Toque em “Avançar” quando o passo for dado.</p>
 
       {/* No celular mostra uma coluna por vez; em tela larga mostra todas */}
       <div className="seg rolavel">
