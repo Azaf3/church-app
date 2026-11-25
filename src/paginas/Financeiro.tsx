@@ -179,7 +179,7 @@ export default function Financeiro() {
             </div>
           </div>
 
-          <div className="colunas">
+          <div className="quadro-hoje quadro-tes">
             <section className="painel">
               <h2>Últimos 6 meses</h2>
               <div className="grafico-meses">

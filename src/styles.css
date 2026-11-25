@@ -847,3 +847,12 @@ span.fixa-valor { width: 110px; text-align: right; color: var(--suave); font-var
 .fixas-sugestao ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 14px; }
 .fixas-sugestao li span { color: var(--suave); }
 .fixas-sugestao .btn { justify-self: start; }
+/* tesouraria: gráficos num quadro só; caixas numa faixa só; abas sem barra de rolagem */
+.quadro-tes { margin-bottom: 16px; }
+.quadro-hoje > .painel + .painel { border-top: 1px solid var(--linha); }
+@media (min-width: 900px) { .quadro-hoje > .painel + .painel { border-top: none; border-left: 1px solid var(--linha); } }
+.tes-abas { scrollbar-width: none; }
+.tes-abas::-webkit-scrollbar { display: none; }
+.caixas { gap: 1px; background: var(--linha); border: 1px solid var(--linha); border-radius: 16px; overflow: hidden; }
+.caixas .caixa-aba { border: none; border-radius: 0; background: var(--papel); box-shadow: none; }
+.caixas .caixa-aba.ativa { background: #f3f8f4; box-shadow: inset 0 -3px 0 var(--verde-escuro); border: none; }
