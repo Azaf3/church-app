@@ -1,4 +1,4 @@
-export type Papel = 'admin' | 'pastor' | 'tesoureiro' | 'obreiro' | 'membro'
+export type Papel = 'admin' | 'pastor' | 'tesoureiro' | 'obreiro' | 'secretario' | 'membro'
 export type Etapa = 'novo' | 'relacionamento' | 'integracao' | 'membresia' | 'pequeno_grupo'
 
 export interface Igreja { id: string; nome: string; cidade: string | null; cor: string; logo: string | null }
@@ -36,6 +36,9 @@ export interface Pessoa {
   observacoes: string | null
   ativo: boolean
   criado_em: string
+  primeira_visita?: string | null
+  como_conheceu?: string | null
+  convidado_por?: string | null
 }
 
 export interface Contato {
@@ -114,4 +117,15 @@ export interface Fechamento {
   reaberto_por_nome: string | null
   reaberto_em: string | null
   motivo_reabertura: string | null
+}
+
+export interface Aviso {
+  id: string
+  tipo: 'evento' | 'aviso'
+  titulo: string
+  texto: string | null
+  data: string | null
+  hora: string | null
+  local: string | null
+  ate: string | null
 }

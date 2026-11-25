@@ -1,7 +1,7 @@
 import FaixaDemo from './FaixaDemo'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useSessao } from '../lib/sessao'
-import { PAPEIS, podeEquipe, podeFinanceiro, primeiroNome } from '../lib/util'
+import { PAPEIS, podeEquipe, podeFinanceiro, podeSecretaria, primeiroNome } from '../lib/util'
 import Icone from './Icone'
 import LogoIgreja from './LogoIgreja'
 
@@ -28,6 +28,7 @@ export default function Layout() {
       { para: '/aniversariantes', nome: 'Aniversariantes', icone: 'bolo' },
     ] },
     { titulo: 'Gestão', itens: [
+      ...(podeSecretaria(papel) ? [{ para: '/secretaria', nome: 'Secretaria', icone: 'pasta' }] : []),
       ...(podeFinanceiro(papel) ? [{ para: '/financeiro', nome: 'Tesouraria', icone: 'dinheiro' }, { para: '/sete', nome: 'Seminário SETE', icone: 'livro' }] : []),
       { para: '/relatorios', nome: 'Relatórios', icone: 'grafico' },
       { para: '/equipe', nome: 'Equipe', icone: 'equipe' },

@@ -20,6 +20,7 @@ import AreaMembro from './paginas/AreaMembro'
 import MinhaFicha from './paginas/MinhaFicha'
 import ImportarFinanceiro from './paginas/ImportarFinanceiro'
 import Sete from './paginas/Sete'
+import Secretaria from './paginas/Secretaria'
 import TesAno from './paginas/TesAno'
 import TesRelacao from './paginas/TesRelacao'
 import TesCampanhas from './paginas/TesCampanhas'
@@ -61,6 +62,7 @@ export default function App() {
         <Route path="financeiro/relacao" element={<TesRelacao />} />
         <Route path="financeiro/campanhas" element={<TesCampanhas />} />
         <Route path="sete" element={<Sete />} />
+        <Route path="secretaria" element={<Secretaria />} />
         <Route path="agenda" element={<Agenda />} />
         <Route path="aniversariantes" element={<Aniversariantes />} />
         <Route path="equipe" element={<Equipe />} />

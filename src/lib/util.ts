@@ -15,6 +15,7 @@ export const PAPEIS: Record<Papel, string> = {
   pastor: 'Pastor',
   tesoureiro: 'Tesoureiro',
   obreiro: 'Obreiro',
+  secretario: 'Secretário(a)',
   membro: 'Membro',
 }
 
@@ -23,6 +24,7 @@ export const ehEquipe = (p?: Papel) => !!p && p !== 'membro'
 
 export const podeFinanceiro = (p?: Papel) => p === 'admin' || p === 'pastor' || p === 'tesoureiro'
 export const podeEquipe = (p?: Papel) => p === 'admin' || p === 'pastor'
+export const podeSecretaria = (p?: Papel) => p === 'admin' || p === 'pastor' || p === 'secretario'
 
 export function linkWhats(telefone: string | null, texto = '') {
   if (!telefone) return null

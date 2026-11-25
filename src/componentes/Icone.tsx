@@ -22,6 +22,9 @@ const caminhos: Record<string, string> = {
   calendario_mais: 'M4 6h16v14H4zM4 10h16M9 3v5M15 3v5M12 13v5M9.5 15.5h5',
   livro: 'M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M8 7h8',
   fechar: 'M6 6l12 12M18 6L6 18',
+  pasta: 'M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 10h18',
+  documento: 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7',
+  megafone: 'M4 10v4h3l7 4V6L7 10zM18 9a4 4 0 0 1 0 6',
 }
 
 export default function Icone({ nome, tam = 22 }: { nome: keyof typeof caminhos | string; tam?: number }) {

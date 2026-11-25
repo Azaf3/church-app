@@ -899,3 +899,33 @@ span.fixa-valor { width: 110px; text-align: right; color: var(--suave); font-var
 /* faixas de números com qualquer quantidade de itens */
 @media (min-width: 900px) { .numeros:not(.cinco) { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); } }
 @media (max-width: 699px) { .capa .atalhos > :last-child:nth-child(odd) { grid-column: 1 / -1; } }
+/* secretaria */
+.tes-abas button { padding: 9px 14px; font: inherit; font-weight: 600; font-size: 14.5px; color: var(--suave); background: none; border: none; border-bottom: 2.5px solid transparent; margin-bottom: -1px; white-space: nowrap; cursor: pointer; }
+.tes-abas button.ativa { color: var(--verde-escuro); border-bottom-color: var(--verde-escuro); }
+.sec-quadro { margin-bottom: 16px; }
+.avisos-acoes { justify-content: flex-start; margin-bottom: 14px; }
+.dia-sem { display: block; font-size: 11px; color: var(--suave); font-weight: 600; }
+details.painel summary { cursor: pointer; list-style: none; }
+details.painel summary::-webkit-details-marker { display: none; }
+details.painel summary h2 { margin: 0; font-family: var(--titulo); font-size: 17px; font-weight: 600; color: var(--verde-escuro); }
+details.painel[open] summary { margin-bottom: 10px; }
+.docs { display: grid; gap: 16px; }
+@media (min-width: 1100px) { .docs { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: start; } }
+.documento { background: #fff; border: 1px solid var(--linha); border-radius: 6px; padding: 48px 52px; box-shadow: 0 10px 30px rgba(20, 61, 50, .08); font-family: var(--titulo); color: #1b1b1b; line-height: 1.7; font-size: 15.5px; aspect-ratio: 210 / 297; display: flex; flex-direction: column; }
+.documento header { display: flex; align-items: center; gap: 14px; padding-bottom: 18px; border-bottom: 2px solid var(--verde-escuro); margin-bottom: 30px; }
+.documento header div { display: grid; }
+.documento header strong { font-size: 19px; color: var(--verde-escuro); }
+.documento header span { font-family: 'Figtree', sans-serif; font-size: 13px; color: var(--suave); }
+.documento h1 { text-align: center; font-size: 22px; margin: 0 0 26px; color: var(--verde-escuro); font-weight: 600; }
+.documento p { margin: 0 0 14px; text-align: justify; text-indent: 2.5em; }
+.documento .doc-data { text-align: right; text-indent: 0; margin-top: 22px; }
+.assinatura { margin-top: auto; display: grid; justify-items: center; gap: 2px; padding-top: 40px; }
+.assinatura span { width: 260px; border-top: 1px solid #333; margin-bottom: 6px; }
+.assinatura strong { font-weight: 600; }
+.assinatura small { font-family: 'Figtree', sans-serif; color: var(--suave); }
+@media (max-width: 700px) { .documento { padding: 28px 22px; font-size: 14px; aspect-ratio: auto; } }
+@media print {
+  .secretaria .documento { border: none; box-shadow: none; padding: 0; aspect-ratio: auto; min-height: 92vh; font-size: 13pt; }
+  .secretaria .docs { display: block; }
+  @page { margin: 22mm 20mm; }
+}

@@ -3,7 +3,7 @@ import { useSessao } from '../lib/sessao'
 import type { Papel } from '../lib/tipos'
 
 const PAPEIS: [Papel, string][] = [
-  ['admin', 'Administrador'], ['pastor', 'Pastor'], ['tesoureiro', 'Tesoureiro'], ['obreiro', 'Obreiro'], ['membro', 'Membro'],
+  ['admin', 'Administrador'], ['pastor', 'Pastor'], ['tesoureiro', 'Tesoureiro'], ['obreiro', 'Obreiro'], ['secretario', 'Secretário(a)'], ['membro', 'Membro'],
 ]
 
 // Só existe na demonstração: deixa ver o app como cada cargo vê.

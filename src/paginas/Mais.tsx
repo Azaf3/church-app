@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
 import { useSessao } from '../lib/sessao'
-import { PAPEIS, podeEquipe, podeFinanceiro } from '../lib/util'
+import { PAPEIS, podeEquipe, podeFinanceiro, podeSecretaria } from '../lib/util'
 import Icone from '../componentes/Icone'
 
 export default function Mais() {
   const { papel, igrejas, igreja, trocarIgreja, sair, session } = useSessao()
 
   const itens = [
+    ...(podeSecretaria(papel) ? [{ para: '/secretaria', nome: 'Secretaria', icone: 'pasta' }] : []),
     ...(podeFinanceiro(papel) ? [{ para: '/financeiro', nome: 'Tesouraria', icone: 'dinheiro' }, { para: '/sete', nome: 'Seminário SETE', icone: 'livro' }] : []),
     { para: '/aniversariantes', nome: 'Aniversariantes', icone: 'bolo' },
     { para: '/relatorios', nome: 'Relatórios do mês', icone: 'grafico' },

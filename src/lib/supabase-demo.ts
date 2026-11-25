@@ -114,6 +114,12 @@ const contribuicoes: Linha[] = contribuintes.flatMap((c, i) => Array.from({ leng
     ...(i % 2 ? [{ id: `co${i}-${m}`, igreja_id: IG, contribuinte_id: c.id, ano: ANO_DEMO, mes: m, tipo: 'oferta', valor: 20 + i * 10 }] : []),
   ]))
 
+const avisos: Linha[] = [
+  { id: 'av1', igreja_id: IG, tipo: 'evento', titulo: 'Culto de Santa Ceia', data: dia(4), hora: '10h', local: 'Templo', texto: null, ate: null },
+  { id: 'av2', igreja_id: IG, tipo: 'evento', titulo: 'Culto de oração', data: dia(2), hora: '19h', local: 'Templo', texto: null, ate: null },
+  { id: 'av3', igreja_id: IG, tipo: 'aviso', titulo: 'Inscrições abertas pro retiro de jovens', data: null, hora: null, local: null, texto: 'Falar com a secretaria até dia 10.', ate: dia(20) },
+]
+
 const agenda: Linha[] = [
   { id: 'a1', igreja_id: IG, titulo: 'Visita · Dona Cida Ferreira', tipo: 'visita', inicio: quando(0, '15:00'), local: pessoas[11].endereco, pessoa_id: 'p11', responsavel_id: EU, feito: false },
   { id: 'a2', igreja_id: IG, titulo: 'Culto no lar · Família Pires', tipo: 'culto_no_lar', inicio: quando(0, '20:00'), local: pessoas[7].endereco, pessoa_id: 'p7', responsavel_id: EU, feito: false },
@@ -137,7 +143,7 @@ const db: Record<string, Linha[]> = {
     { igreja_id: IG, user_id: PAULA, nome: 'Paula Freitas', papel: 'obreiro', pessoa_id: null },
   ],
   convites: [{ id: 'cv1', igreja_id: IG, email: 'diacono.jose@email.com', nome: 'José Diácono', papel: 'obreiro' }],
-  pessoas, contatos, cultos, presencas, lancamentos, agenda, contribuintes, contribuicoes,
+  pessoas, contatos, cultos, presencas, lancamentos, agenda, contribuintes, contribuicoes, avisos,
 }
 
 // Versão particular: se a página trouxer membros reais (window.__SEED_PESSOAS__),

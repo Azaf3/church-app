@@ -9,6 +9,7 @@ import BotaoWhats from './BotaoWhats'
 const FUNCOES: { id: Papel; nome: string; desc: string }[] = [
   { id: 'membro', nome: 'Membro', desc: 'Só vê e atualiza a própria ficha' },
   { id: 'obreiro', nome: 'Obreiro', desc: 'Cuida de pessoas, jornada e agenda' },
+  { id: 'secretario', nome: 'Secretário(a)', desc: 'Secretaria: visitantes, fichas, documentos e avisos' },
   { id: 'tesoureiro', nome: 'Tesoureiro', desc: 'Tudo do obreiro + dízimos e ofertas' },
   { id: 'pastor', nome: 'Pastor', desc: 'Acesso total e gerencia a equipe' },
   { id: 'admin', nome: 'Administrador', desc: 'Acesso total (dono da conta da igreja)' },
