@@ -26,6 +26,7 @@ export default function ImportarFinanceiro() {
   const [mapa, setMapa] = useState<Mapa>({})
   const [pessoas, setPessoas] = useState<PessoaRef[]>([])
   const [jaLancados, setJaLancados] = useState(0)
+  const [mesesFechados, setMesesFechados] = useState<string[]>([])
   const [existentes, setExistentes] = useState<Set<string>>(new Set())
   const [ajustes, setAjustes] = useState<Record<number, Ajuste>>({})
   const [revisando, setRevisando] = useState(false)
@@ -43,6 +44,11 @@ export default function ImportarFinanceiro() {
 
   useEffect(() => {
     if (!igreja) return
+    supabase.from('fechamentos').select('mes, situacao').eq('igreja_id', igreja.id)
+      .then(({ data }) => setMesesFechados(((data ?? []) as { mes: string; situacao: string }[]).filter((f) => f.situacao === 'fechado').map((f) => f.mes)))
+  }, [igreja?.id])
+  useEffect(() => {
+    if (!igreja) return
     supabase.from('lancamentos').select('id').eq('igreja_id', igreja.id).eq('tipo', 'saldo_inicial').limit(1)
       .then(({ data }) => setTemSaldoInicial(!!data?.length))
   }, [igreja?.id, estado])
@@ -54,8 +60,9 @@ export default function ImportarFinanceiro() {
     () => (modo === 'todas'
       ? todas.linhas
       : montarLinhas(tabela, linhaCab, mapa, pessoas, { anoPadrao: ANO, tipoPadrao: 'auto', formaPadrao: 'dinheiro' }))
-      .map((l) => ({ ...l, ...ajustes[l.n] })),
-    [modo, todas, tabela, linhaCab, mapa, pessoas, ajustes],
+      .map((l) => ({ ...l, ...ajustes[l.n] }))
+      .filter((l) => !l.data || !mesesFechados.includes(l.data.slice(0, 7))),
+    [modo, todas, tabela, linhaCab, mapa, pessoas, ajustes, mesesFechados],
   )
   const saldoInicial = modo === 'todas' && !temSaldoInicial && todas.saldoInicial && todas.saldoInicial.valor > 0 ? todas.saldoInicial : null
 
@@ -258,6 +265,9 @@ export default function ImportarFinanceiro() {
           )}
           {saldoInicial && (
             <p className="imp-saldo">Saldo anterior de {saldoInicial.aba.trim()}: <b>{dinheiro(saldoInicial.valor)}</b> (entra como saldo inicial do caixa)</p>
+          )}
+          {mesesFechados.length > 0 && (
+            <p className="imp-troca">Meses fechados não mudam: {mesesFechados.sort().map(mesCurto).join(', ')} ficam de fora desta importação.</p>
           )}
           {jaLancados > 0 && (
             <p className="imp-troca">

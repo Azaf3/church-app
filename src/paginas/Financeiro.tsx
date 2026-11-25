@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { buscarTudo } from '../lib/buscarTudo'
 import { useSessao } from '../lib/sessao'
-import type { Contribuinte, Lancamento, Pessoa } from '../lib/tipos'
+import type { Contribuinte, Fechamento, Lancamento, Pessoa } from '../lib/tipos'
 import { MESES, dataBR, dinheiro, hojeISO, podeFinanceiro } from '../lib/util'
 import { ENTRADAS, FORMAS, FUNDOS, NOMES_CATEGORIAS, OUTRAS, adivinharCategoria, ehEntrada, ehSaida, ehSaldoInicial, mesCurto, mesesAte, somar, type Fundo } from '../lib/tesouraria'
 import Folha from '../componentes/Folha'
@@ -16,7 +16,7 @@ type Filtro = 'tudo' | 'entradas' | 'saidas'
 type Visao = 'tudo' | Fundo
 
 export default function Financeiro() {
-  const { igreja, papel, userId } = useSessao()
+  const { igreja, papel, userId, equipe } = useSessao()
   const [params] = useSearchParams()
   const [mes, setMes] = useState(hojeISO().slice(0, 7))
   const [todos, setTodos] = useState<Lancamento[] | null>(null)
@@ -28,6 +28,8 @@ export default function Financeiro() {
   const [novo, setNovo] = useState<null | 'entrada' | 'saida'>(params.get('novo') === '1' ? 'entrada' : null)
   const [editando, setEditando] = useState<Lancamento | null>(null)
   const [fixasAberta, setFixasAberta] = useState(false)
+  const [fechamentos, setFechamentos] = useState<Fechamento[]>([])
+  const [fechando, setFechando] = useState<'fechar' | 'reabrir' | null>(null)
 
   function carregar() {
     if (!igreja || !podeFinanceiro(papel)) return
@@ -35,6 +37,11 @@ export default function Financeiro() {
       .then(({ data }) => setTodos((data as Lancamento[]) ?? []))
   }
   useEffect(carregar, [igreja?.id, papel])
+  function carregarFechamentos() {
+    if (!igreja || !podeFinanceiro(papel)) return
+    supabase.from('fechamentos').select('*').eq('igreja_id', igreja.id).then(({ data }) => setFechamentos((data as Fechamento[]) ?? []))
+  }
+  useEffect(carregarFechamentos, [igreja?.id, papel])
 
   useEffect(() => {
     if (!igreja) return
@@ -98,6 +105,11 @@ export default function Financeiro() {
     .map((l) => { corre += ehSaida(l) ? -Number(l.valor) : Number(l.valor); return { l, saldo: corre } })
     .filter(({ l }) => lista.includes(l))
   const vazio = todos !== null && todos.length === 0
+  const fechMes = fechamentos.find((f) => f.mes === mes)
+  const fechado = fechMes?.situacao === 'fechado'
+  // saldo de todos os caixas no fim do mês (é o que bate com o banco)
+  const saldoFimMes = (() => { const x = (todos ?? []).filter((l) => l.data.slice(0, 7) <= mes); return somar(x.filter((l) => !ehSaida(l))) - somar(x.filter(ehSaida)) })()
+  const meuNome = equipe.find((e) => e.user_id === userId)?.nome ?? null
   const campanhas = [...new Set((todos ?? []).map((l) => l.campanha?.trim()).filter(Boolean) as string[])].sort()
 
   return (
@@ -146,13 +158,40 @@ export default function Financeiro() {
               {MESES.map((nome, i) => {
                 const ym = `${a}-${String(i + 1).padStart(2, '0')}`
                 const tem = (todos ?? []).some((l) => l.data.startsWith(ym))
+                const trancado = fechamentos.some((f) => f.mes === ym && f.situacao === 'fechado')
                 return (
-                  <button key={ym} className={(ym === mes ? 'ativo ' : '') + (tem ? 'tem' : '')} onClick={() => setMes(ym)}>
+                  <button key={ym} className={(ym === mes ? 'ativo ' : '') + (tem ? 'tem ' : '') + (trancado ? 'fechado' : '')} onClick={() => setMes(ym)}
+                    title={trancado ? 'Mês fechado' : undefined}>
                     {nome.slice(0, 3)}
                   </button>
                 )
               })}
             </div>
+          </div>
+          <div className={'fechamento sem-impressao' + (fechado ? ' fechado' : '')}>
+            {fechado && fechMes ? (
+              <>
+                <div>
+                  <strong>{MESES[m - 1]} fechado</strong>
+                  <span>
+                    em {dataBR(fechMes.fechado_em.slice(0, 10))}{fechMes.fechado_por_nome ? ` por ${fechMes.fechado_por_nome}` : ''}
+                    {fechMes.saldo_banco !== null && <> · banco {dinheiro(Number(fechMes.saldo_banco))} · livro {dinheiro(Number(fechMes.saldo_livro))}
+                      {Math.abs(Number(fechMes.saldo_banco) - Number(fechMes.saldo_livro)) < 0.005
+                        ? <b className="pos"> · conferido</b>
+                        : <b className="neg"> · diferença de {dinheiro(Math.abs(Number(fechMes.saldo_banco) - Number(fechMes.saldo_livro)))}</b>}</>}
+                  </span>
+                </div>
+                <button className="btn btn-mini" onClick={() => setFechando('reabrir')}>Reabrir</button>
+              </>
+            ) : (
+              <>
+                <div>
+                  <strong>{MESES[m - 1]} aberto</strong>
+                  <span>{fechMes?.situacao === 'reaberto' ? `reaberto${fechMes.reaberto_por_nome ? ` por ${fechMes.reaberto_por_nome}` : ''}: ${fechMes.motivo_reabertura ?? ''}` : 'confira com o extrato do banco e feche quando terminar o mês'}</span>
+                </div>
+                {mes <= hojeISO().slice(0, 7) && <button className="btn btn-mini btn-primario" onClick={() => setFechando('fechar')}>Fechar o mês</button>}
+              </>
+            )}
           </div>
           <p className="so-impressao">{igreja?.nome} · Tesouraria{visao !== 'tudo' ? ` · ${FUNDOS[visao]}` : ''} · {MESES[m - 1]} de {a}</p>
 
@@ -170,7 +209,7 @@ export default function Financeiro() {
             <div className="numero">
               <span>Saídas do mês</span>
               <strong className="valor neg">{dinheiro(contas.totSai)}</strong>
-              <small>{contas.sai.length} lançamentos</small>
+              <small>{contas.sai.length} {contas.sai.length === 1 ? "lançamento" : "lançamentos"}</small>
             </div>
             <div className="numero">
               <span>Resultado do mês</span>
@@ -226,7 +265,7 @@ export default function Financeiro() {
             <div className="lista-topo">
               <h2>Livro-caixa de {MESES[m - 1].toLowerCase()}{visao !== 'tudo' ? ` · ${FUNDOS[visao]}` : ''}</h2>
               <div className="acoes-livro sem-impressao">
-                <button className="btn btn-mini" onClick={() => setFixasAberta(true)}>Despesas fixas</button>
+                {!fechado && <button className="btn btn-mini" onClick={() => setFixasAberta(true)}>Despesas fixas</button>}
                 <button className="btn btn-mini" onClick={() => window.print()}>Imprimir / PDF</button>
               </div>
             </div>
@@ -246,7 +285,7 @@ export default function Financeiro() {
                 <tbody>
                   <tr className="linha-saldo"><td /><td className="esq" colSpan={2}>Saldo anterior</td><td /><td /><td>{num(saldoAnterior)}</td></tr>
                   {livro.map(({ l, saldo }) => (
-                    <tr key={l.id} onClick={() => setEditando(l)} className="clicavel">
+                    <tr key={l.id} onClick={() => (fechado ? setFechando('reabrir') : setEditando(l))} className="clicavel">
                       <td>{dataBR(l.data).slice(0, 5)}</td>
                       <td className="esq desc">
                         {ehSaldoInicial(l) ? (l.descricao || 'Saldo inicial') : ehSaida(l) ? (l.descricao || l.nome || l.categoria || 'Saída') : (nomeDe(l) || l.descricao || 'Entrada')}
@@ -269,9 +308,9 @@ export default function Financeiro() {
                 </tfoot>
               </table>
             </div>
-            <LinhaRapida mes={mes} visao={visao} igrejaId={igreja!.id} userId={userId!} pessoas={pessoas} contribuintes={contribuintes} novoContribuinte={novoContribuinte}
-              salvo={(l) => setTodos([...(todos ?? []), l])} />
-            <p className="dica sem-impressao">Toque numa linha pra corrigir ou apagar.</p>
+            {!fechado && <LinhaRapida mes={mes} visao={visao} igrejaId={igreja!.id} userId={userId!} pessoas={pessoas} contribuintes={contribuintes} novoContribuinte={novoContribuinte}
+              salvo={(l) => setTodos([...(todos ?? []), l])} />}
+            <p className="dica sem-impressao">{fechado ? 'Mês fechado: pra corrigir algo, reabra o mês.' : 'Toque numa linha pra corrigir ou apagar.'}</p>
           </section>
         </>
       )}
@@ -279,6 +318,10 @@ export default function Financeiro() {
       <Folha titulo={novo === 'saida' ? 'Nova saída' : 'Nova entrada'} aberta={!!novo} fechar={() => setNovo(null)}>
         {novo && <FormLancamento modo={novo} fundoPadrao={visao === 'tudo' ? 'geral' : visao} igrejaId={igreja!.id} userId={userId!} pessoas={pessoas} campanhas={campanhas} contribuintes={contribuintes} novoContribuinte={novoContribuinte}
           salvo={(l) => { setTodos([l, ...(todos ?? [])]); setMes(l.data.slice(0, 7)); setNovo(null) }} />}
+      </Folha>
+      <Folha titulo={fechando === 'reabrir' ? `Reabrir ${MESES[m - 1].toLowerCase()}` : `Fechar ${MESES[m - 1].toLowerCase()}`} aberta={!!fechando} fechar={() => setFechando(null)}>
+        {fechando && <FormFechamento modo={fechando} mes={mes} saldoLivro={saldoFimMes} atual={fechMes} igrejaId={igreja!.id} userId={userId!} nome={meuNome}
+          pronto={() => { setFechando(null); carregarFechamentos() }} />}
       </Folha>
       <Folha titulo={`Despesas fixas · ${MESES[Number(mes.slice(5)) - 1]}`} aberta={fixasAberta} fechar={() => setFixasAberta(false)}>
         {fixasAberta && <DespesasFixas mes={mes} igrejaId={igreja!.id} userId={userId!} todos={todos ?? []}
@@ -335,13 +378,14 @@ function FormLancamento({ modo, inicial, fundoPadrao = 'geral', igrejaId, userId
       ? supabase.from('lancamentos').update(reg).eq('id', inicial.id).select().single()
       : supabase.from('lancamentos').insert(reg).select().single()
     const { data: l, error } = await q
-    if (error || !l) { setErro(/check|campanha|schema cache/.test(error?.message ?? '') ? 'Falta rodar a migração mais nova no Supabase.' : 'Não deu pra salvar.'); return }
+    if (error || !l) { setErro(/mes fechado/.test(error?.message ?? '') ? 'Esse mês está fechado. Reabra o mês pra lançar ou mudar algo nele.' : /check|campanha|schema cache/.test(error?.message ?? '') ? 'Falta rodar a migração mais nova no Supabase.' : 'Não deu pra salvar.'); return }
     salvo(l)
   }
 
   async function apagar() {
     const { error } = await supabase.from('lancamentos').delete().eq('id', inicial!.id)
-    if (!error) apagado?.(inicial!.id)
+    if (error) { setErro(/mes fechado/.test(error.message) ? 'Esse mês está fechado. Reabra o mês pra apagar.' : 'Não deu pra apagar.'); setConfirmar(false); return }
+    apagado?.(inicial!.id)
   }
 
   return (
@@ -447,7 +491,7 @@ function LinhaRapida({ mes, visao, igrejaId, userId, pessoas, contribuintes, nov
       ...(contrib ? { contribuinte_id: contrib.id } : {}),
     }).select().single()
     setSalvando(false)
-    if (error || !l) { setErro('Não deu pra salvar.'); return }
+    if (error || !l) { setErro(/mes fechado/.test(error?.message ?? '') ? 'Esse mês está fechado.' : 'Não deu pra salvar.'); return }
     salvo(l as Lancamento)
     setDescricao(''); setValor(''); setQuem('')
   }
@@ -485,6 +529,70 @@ function LinhaRapida({ mes, visao, igrejaId, userId, pessoas, contribuintes, nov
       <input className="lr-valor" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="Valor" aria-label="Valor" required />
       <button className={'btn ' + (tipo === 'saida' ? 'btn-saida-cheio' : 'btn-primario')} disabled={salvando}>{salvando ? '…' : '+ Lançar'}</button>
       {erro && <p className="erro">{erro}</p>}
+    </form>
+  )
+}
+
+function FormFechamento({ modo, mes, saldoLivro, atual, igrejaId, userId, nome, pronto }: {
+  modo: 'fechar' | 'reabrir'; mes: string; saldoLivro: number; atual?: Fechamento; igrejaId: string; userId: string; nome: string | null; pronto: () => void
+}) {
+  const [banco, setBanco] = useState('')
+  const [obs, setObs] = useState('')
+  const [motivo, setMotivo] = useState('')
+  const [erro, setErro] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const v = banco.trim() ? Number(banco.replace(/\./g, '').replace(',', '.')) : null
+  const dif = v === null || Number.isNaN(v) ? null : Math.round((v - saldoLivro) * 100) / 100
+
+  async function enviar(e: FormEvent) {
+    e.preventDefault(); setErro('')
+    if (modo === 'reabrir') {
+      if (!motivo.trim()) { setErro('Conte o motivo da reabertura (fica registrado).'); return }
+      setSalvando(true)
+      const { error } = await supabase.from('fechamentos').update({
+        situacao: 'reaberto', reaberto_por_nome: nome, reaberto_em: new Date().toISOString(), motivo_reabertura: motivo.trim(),
+      }).eq('id', atual!.id)
+      setSalvando(false)
+      if (error) { setErro('Não deu pra reabrir.'); return }
+      pronto(); return
+    }
+    if (v !== null && Number.isNaN(v)) { setErro('Saldo do banco inválido.'); return }
+    setSalvando(true)
+    const reg = {
+      situacao: 'fechado', saldo_livro: Math.round(saldoLivro * 100) / 100, saldo_banco: v, observacao: obs.trim() || null,
+      fechado_por: userId, fechado_por_nome: nome, fechado_em: new Date().toISOString(),
+    }
+    const { error } = atual
+      ? await supabase.from('fechamentos').update(reg).eq('id', atual.id)
+      : await supabase.from('fechamentos').insert({ igreja_id: igrejaId, mes, ...reg })
+    setSalvando(false)
+    if (error) { setErro(/relation|schema cache|does not exist/.test(error.message) ? 'Falta rodar a migração mais nova no Supabase.' : 'Não deu pra fechar o mês.'); return }
+    pronto()
+  }
+
+  if (modo === 'reabrir') {
+    return (
+      <form className="form" onSubmit={enviar}>
+        <p className="suave">Com o mês reaberto dá pra lançar, corrigir e apagar de novo. A reabertura fica registrada com o seu nome e o motivo.</p>
+        <label>Motivo<input value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ex.: faltou lançar a conta de luz" autoFocus /></label>
+        {erro && <p className="erro">{erro}</p>}
+        <button className="btn btn-primario" disabled={salvando}>Reabrir o mês</button>
+      </form>
+    )
+  }
+  return (
+    <form className="form" onSubmit={enviar}>
+      <div className="fech-saldo"><span>Saldo do livro-caixa no fim do mês</span><strong>{dinheiro(saldoLivro)}</strong><small>todos os caixas juntos</small></div>
+      <label>Saldo no extrato do banco (R$)
+        <input inputMode="decimal" value={banco} onChange={(e) => setBanco(e.target.value)} placeholder="Ex.: 3.912,96" autoFocus />
+      </label>
+      {dif !== null && (dif === 0
+        ? <p className="fech-ok">Bateu certinho com o banco.</p>
+        : <p className="fech-dif">Diferença de {dinheiro(Math.abs(dif))} ({dif > 0 ? 'o banco tem mais' : 'o banco tem menos'} que o livro). Dá pra fechar assim e explicar na observação, ou corrigir os lançamentos antes.</p>)}
+      <label>Observação (opcional)<input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Ex.: R$ 50 em espécie ainda não depositado" /></label>
+      <p className="dica">Depois de fechado, ninguém lança nem muda nada neste mês sem reabrir.</p>
+      {erro && <p className="erro">{erro}</p>}
+      <button className="btn btn-primario" disabled={salvando}>{salvando ? 'Fechando…' : 'Fechar o mês'}</button>
     </form>
   )
 }

@@ -101,3 +101,17 @@ export interface Compromisso {
   responsavel_id: string | null
   feito: boolean
 }
+
+export interface Fechamento {
+  id: string
+  mes: string
+  situacao: 'fechado' | 'reaberto'
+  saldo_livro: number
+  saldo_banco: number | null
+  observacao: string | null
+  fechado_por_nome: string | null
+  fechado_em: string
+  reaberto_por_nome: string | null
+  reaberto_em: string | null
+  motivo_reabertura: string | null
+}

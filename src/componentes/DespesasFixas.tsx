@@ -88,7 +88,7 @@ export default function DespesasFixas({ mes, igrejaId, userId, todos, lancadas }
     }))
     const { data, error } = await supabase.from('lancamentos').insert(regs).select()
     setSalvando(false)
-    if (error) { setErro('Não consegui lançar. Tente de novo.'); return }
+    if (error) { setErro(/mes fechado/.test(error.message) ? 'Esse mês está fechado.' : 'Não consegui lançar. Tente de novo.'); return }
     lancadas((data as Lancamento[]) ?? [])
   }
 
