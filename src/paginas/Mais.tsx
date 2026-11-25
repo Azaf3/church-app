@@ -21,7 +21,7 @@ export default function Mais() {
   return (
     <>
       <h1 className="titulo">Mais</h1>
-      <ul className="lista">
+      <ul className="lista agrupada">
         {itens.map((i) => (
           <li key={i.para}>
             <Link to={i.para} className="item">

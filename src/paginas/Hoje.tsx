@@ -103,15 +103,25 @@ export default function Hoje() {
 
   return (
     <div className="hoje">
-      <header className="boas-vindas">
+      <section className="capa">
+        <svg className="capa-cruz" viewBox="0 0 100 100" aria-hidden="true"><path d="M40 6h20v28h28v20H60v40H40V54H12V34h28z" /></svg>
         <p className="data-hoje">{hojeTexto}</p>
         <h1 className="titulo">{saudacao()}{eu ? `, ${primeiroNome(eu.nome)}` : ''}</h1>
-        <p className="suave">
+        <p className="capa-sub">
           {minhas.length === 0
             ? 'Ninguém esperando um passo seu agora.'
             : `${minhas.length} ${minhas.length === 1 ? 'pessoa espera' : 'pessoas esperam'} um passo seu.`}
         </p>
-      </header>
+        <div className="atalhos">
+          {atalhos.map((a) => (
+            <Link key={a.para} to={a.para} className="atalho">
+              <span><Icone nome={a.icone} tam={20} /></span>
+              {a.nome}
+            </Link>
+          ))}
+        </div>
+
+      </section>
 
       {eu && !eu.pessoa_id && !semFicha && (
         <Link to="/minha-ficha" className="painel aviso-ficha">
@@ -125,15 +135,6 @@ export default function Hoje() {
           </div>
         </Link>
       )}
-
-      <div className="atalhos">
-        {atalhos.map((a) => (
-          <Link key={a.para} to={a.para} className="atalho">
-            <span><Icone nome={a.icone} tam={20} /></span>
-            {a.nome}
-          </Link>
-        ))}
-      </div>
 
       <div className="numeros">
         <Link to="/pessoas" className="numero">

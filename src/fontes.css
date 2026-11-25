@@ -1,0 +1,15 @@
+/* fontes embutidas no app (só latim): não dependem do Google Fonts */
+@font-face {
+  font-family: 'Literata';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 900;
+  src: url('@fontsource-variable/literata/files/literata-latin-opsz-normal.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 900;
+  src: url('@fontsource-variable/figtree/files/figtree-latin-wght-normal.woff2') format('woff2-variations');
+}
