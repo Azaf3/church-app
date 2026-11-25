@@ -60,6 +60,23 @@ export interface Lancamento {
   pessoa_id: string | null
   nome: string | null
   forma: 'pix' | 'dinheiro' | 'cartao' | 'transferencia'
+  campanha?: string | null
+}
+
+export interface Contribuinte {
+  id: string
+  codigo: string
+  nome: string | null
+  pessoa_id: string | null
+}
+
+export interface Contribuicao {
+  id: string
+  contribuinte_id: string
+  ano: number
+  mes: number
+  tipo: 'dizimo' | 'oferta'
+  valor: number
 }
 
 export interface Compromisso {

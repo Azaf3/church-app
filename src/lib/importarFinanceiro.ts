@@ -196,7 +196,10 @@ export function montarLinhas(
         n: (i + 1) + k / 10, data, valor: Math.round(x.valor * 100) / 100, saida,
         categoria: saida ? adivinharCategoria(descricao, tipoTxt, nome) : null,
         fundo: fundoDaDescricao(descricao, tipoTxt, nome),
-        tipo: tipoLido && tipoLido !== 'saida' ? tipoLido : op.tipoPadrao === 'auto' ? (nome ? 'dizimo' : 'oferta') : op.tipoPadrao,
+        tipo: tipoLido && tipoLido !== 'saida' ? tipoLido
+          : op.tipoPadrao !== 'auto' ? op.tipoPadrao
+          // descrição que não fala de dízimo nem oferta (empréstimo, devolução, SETE...) é "outra entrada"
+          : descricao || tipoTxt ? 'outro' : nome ? 'dizimo' : 'oferta',
         forma: lerForma(texto(pega(r, mapa.forma))) ?? op.formaPadrao,
         nome, pessoa: saida ? null : pessoa, descricao, problemas,
       })
@@ -268,4 +271,56 @@ export function melhorAba(abas: { aba: string; tabela: Tabela }[], anoPadrao: nu
     if (n > melhor.n) melhor = { i, n }
   })
   return melhor.i
+}
+
+// ---------- Relação de dizimistas / ofertantes (código × mês) ----------
+
+export interface RelacaoLida {
+  aba: string
+  tipo: 'dizimo' | 'oferta'
+  linhas: { codigo: string; valores: (number | null)[] }[] // 12 meses
+  totais: (number | null)[] // linha "Total" da planilha, pra conferir
+}
+
+const MES_RE = [/^jan/, /^fev/, /^mar/, /^abr/, /^mai/, /^jun/, /^jul/, /^ago/, /^set/, /^out/, /^nov/, /^dez/]
+
+export function lerRelacoes(abas: { aba: string; tabela: Tabela }[]): RelacaoLida[] {
+  const out: RelacaoLida[] = []
+  for (const a of abas) {
+    const n = normalizar(a.aba)
+    const tipo = /dizim/.test(n) ? 'dizimo' : /ofert/.test(n) ? 'oferta' : null
+    if (!tipo) continue
+    const t = a.tabela
+    // cabeçalho: a linha com os 12 meses
+    let cab = -1; let cols: number[] = []
+    for (let i = 0; i < Math.min(t.length, 30) && cab < 0; i++) {
+      const r = t[i] ?? []
+      const c = MES_RE.map((re) => r.findIndex((x) => re.test(normalizar(texto(x ?? null)))))
+      if (c.filter((x) => x >= 0).length >= 10) { cab = i; cols = c }
+    }
+    if (cab < 0) continue
+    const primeira = Math.min(...cols.filter((x) => x >= 0))
+    const colCodigo = primeira - 1, colNumero = primeira - 2
+    const linhas: RelacaoLida['linhas'] = []
+    let totais: (number | null)[] = Array(12).fill(null)
+    let atual: RelacaoLida['linhas'][number] | null = null
+    for (let i = cab + 1; i < t.length; i++) {
+      const r = t[i] ?? []
+      const codigo = texto(r[colCodigo] ?? null).trim()
+      const numero = colNumero >= 0 ? texto(r[colNumero] ?? null).trim() : ''
+      const valores = cols.map((c) => (c < 0 ? null : lerValor(r[c] ?? null)))
+      if (/^total/.test(normalizar(codigo))) { totais = valores; break }
+      const tem = valores.some((v) => v)
+      if (codigo || numero) {
+        atual = { codigo: codigo || `Sem código nº ${numero} (${tipo === 'dizimo' ? 'dízimos' : 'ofertas'})`, valores: Array(12).fill(null) }
+        linhas.push(atual)
+      }
+      if (!tem) continue
+      if (!atual) { atual = { codigo: 'Sem código', valores: Array(12).fill(null) }; linhas.push(atual) }
+      // linha sem nome e sem número logo abaixo: é mais um valor da mesma pessoa
+      valores.forEach((v, k) => { if (v) atual!.valores[k] = Math.round(((atual!.valores[k] ?? 0) + v) * 100) / 100 })
+    }
+    out.push({ aba: a.aba, tipo, linhas, totais })
+  }
+  return out
 }

@@ -7,6 +7,7 @@ import { MESES, dataBR, dinheiro, hojeISO, podeFinanceiro } from '../lib/util'
 import { ENTRADAS, FORMAS, FUNDOS, NOMES_CATEGORIAS, OUTRAS, ehEntrada, ehSaida, ehSaldoInicial, mesCurto, mesesAte, somar, type Fundo } from '../lib/tesouraria'
 import Folha from '../componentes/Folha'
 import Icone from '../componentes/Icone'
+import TesAbas from '../componentes/TesAbas'
 
 type Filtro = 'tudo' | 'entradas' | 'saidas'
 type Visao = 'tudo' | Fundo
@@ -81,6 +82,7 @@ export default function Financeiro() {
     .filter((l) => filtro === 'tudo' || (filtro === 'saidas' ? ehSaida(l) : !ehSaida(l)))
     .filter((l) => !t || [nomeDe(l), l.descricao, l.categoria].some((x) => x?.toLowerCase().includes(t)))
   const vazio = todos !== null && todos.length === 0
+  const campanhas = [...new Set((todos ?? []).map((l) => l.campanha?.trim()).filter(Boolean) as string[])].sort()
 
   return (
     <div className="tesouraria">
@@ -92,6 +94,7 @@ export default function Financeiro() {
           <button className="btn btn-primario" onClick={() => setNovo('entrada')}>+ Entrada</button>
         </div>
       </div>
+      <TesAbas />
 
       {vazio ? (
         <section className="painel boas-vindas-tes">
@@ -133,7 +136,7 @@ export default function Financeiro() {
             <div className="numero">
               <span>Entradas do mês</span>
               <strong className="valor pos">{dinheiro(contas.totEnt)}</strong>
-              <small>{contas.ent.length} lançamentos · {contas.dizimistas} dizimistas</small>
+              <small>dízimos {dinheiro(contas.porTipo[0].v)} · ofertas {dinheiro(contas.porTipo[1].v)}{contas.porTipo[2].v > 0 ? ` · outras ${dinheiro(contas.porTipo[2].v)}` : ''}</small>
             </div>
             <div className="numero">
               <span>Saídas do mês</span>
@@ -214,6 +217,7 @@ export default function Financeiro() {
                         {ehSaldoInicial(l) ? 'Saldo inicial' : ehSaida(l) ? (l.categoria || OUTRAS) : ENTRADAS[l.tipo as keyof typeof ENTRADAS]}
                         {!ehSaldoInicial(l) && ` · ${FORMAS[l.forma]}`}
                         {visao === 'tudo' && (l.fundo ?? 'geral') !== 'geral' && <em className="tag-fundo"> · {FUNDOS[l.fundo]}</em>}
+                        {l.campanha && <em className="tag-fundo"> · {l.campanha}</em>}
                       </span>
                     </div>
                     <strong className={'valor ' + (ehSaida(l) ? 'neg' : 'pos')}>{ehSaida(l) ? '−' : '+'} {dinheiro(Number(l.valor))}</strong>
@@ -226,11 +230,11 @@ export default function Financeiro() {
       )}
 
       <Folha titulo={novo === 'saida' ? 'Nova saída' : 'Nova entrada'} aberta={!!novo} fechar={() => setNovo(null)}>
-        {novo && <FormLancamento modo={novo} fundoPadrao={visao === 'tudo' ? 'geral' : visao} igrejaId={igreja!.id} userId={userId!} pessoas={pessoas}
+        {novo && <FormLancamento modo={novo} fundoPadrao={visao === 'tudo' ? 'geral' : visao} igrejaId={igreja!.id} userId={userId!} pessoas={pessoas} campanhas={campanhas}
           salvo={(l) => { setTodos([l, ...(todos ?? [])]); setMes(l.data.slice(0, 7)); setNovo(null) }} />}
       </Folha>
       <Folha titulo="Lançamento" aberta={!!editando} fechar={() => setEditando(null)}>
-        {editando && <FormLancamento modo={ehSaida(editando) ? 'saida' : 'entrada'} inicial={editando} igrejaId={igreja!.id} userId={userId!} pessoas={pessoas}
+        {editando && <FormLancamento modo={ehSaida(editando) ? 'saida' : 'entrada'} inicial={editando} igrejaId={igreja!.id} userId={userId!} pessoas={pessoas} campanhas={campanhas}
           salvo={(l) => { setTodos((todos ?? []).map((x) => (x.id === l.id ? l : x))); setEditando(null) }}
           apagado={(id) => { setTodos((todos ?? []).filter((x) => x.id !== id)); setEditando(null) }} />}
       </Folha>
@@ -238,8 +242,8 @@ export default function Financeiro() {
   )
 }
 
-function FormLancamento({ modo, inicial, fundoPadrao = 'geral', igrejaId, userId, pessoas, salvo, apagado }: {
-  modo: 'entrada' | 'saida'; inicial?: Lancamento; fundoPadrao?: Fundo; igrejaId: string; userId: string; pessoas: Pessoa[]
+function FormLancamento({ modo, inicial, fundoPadrao = 'geral', igrejaId, userId, pessoas, campanhas, salvo, apagado }: {
+  modo: 'entrada' | 'saida'; inicial?: Lancamento; fundoPadrao?: Fundo; igrejaId: string; userId: string; pessoas: Pessoa[]; campanhas: string[]
   salvo: (l: Lancamento) => void; apagado?: (id: string) => void
 }) {
   const saida = modo === 'saida'
@@ -252,6 +256,7 @@ function FormLancamento({ modo, inicial, fundoPadrao = 'geral', igrejaId, userId
   const [categoria, setCategoria] = useState(inicial?.categoria ?? NOMES_CATEGORIAS[0])
   const [forma, setForma] = useState<Lancamento['forma']>(inicial?.forma ?? 'pix')
   const [fundo, setFundo] = useState<Fundo>(inicial?.fundo ?? fundoPadrao)
+  const [campanha, setCampanha] = useState(inicial?.campanha ?? '')
   const saldoIni = inicial?.tipo === 'saldo_inicial'
   const [erro, setErro] = useState('')
   const [confirmar, setConfirmar] = useState(false)
@@ -266,12 +271,13 @@ function FormLancamento({ modo, inicial, fundoPadrao = 'geral', igrejaId, userId
       nome: saida ? null : pessoaId ? null : nome || null,
       descricao: descricao || null,
       categoria: saida ? categoria : null,
+      ...(campanha.trim() || inicial?.campanha ? { campanha: campanha.trim() || null } : {}),
     }
     const q = inicial
       ? supabase.from('lancamentos').update(reg).eq('id', inicial.id).select().single()
       : supabase.from('lancamentos').insert(reg).select().single()
     const { data: l, error } = await q
-    if (error || !l) { setErro(saida && /check/.test(error?.message ?? '') ? 'Falta rodar a migração 006 no Supabase.' : 'Não deu pra salvar.'); return }
+    if (error || !l) { setErro(/check|campanha|schema cache/.test(error?.message ?? '') ? 'Falta rodar a migração mais nova no Supabase.' : 'Não deu pra salvar.'); return }
     salvo(l)
   }
 
@@ -318,6 +324,12 @@ function FormLancamento({ modo, inicial, fundoPadrao = 'geral', igrejaId, userId
           {!pessoaId && <label>Nome (opcional)<input value={nome} onChange={(e) => setNome(e.target.value)} /></label>}
           <label>Observação (opcional)<input value={descricao} onChange={(e) => setDescricao(e.target.value)} /></label>
         </>
+      )}
+      {!saldoIni && (
+        <label>Campanha (opcional)
+          <input list="campanhas" value={campanha} onChange={(e) => setCampanha(e.target.value)} placeholder="Ex.: Reforma do templo" />
+          <datalist id="campanhas">{campanhas.map((c) => <option key={c} value={c} />)}</datalist>
+        </label>
       )}
       <label>Forma
         <select value={forma} onChange={(e) => setForma(e.target.value as Lancamento['forma'])}>

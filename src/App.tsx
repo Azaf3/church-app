@@ -21,6 +21,9 @@ import AreaMembro from './paginas/AreaMembro'
 import MinhaFicha from './paginas/MinhaFicha'
 import ImportarFinanceiro from './paginas/ImportarFinanceiro'
 import Sete from './paginas/Sete'
+import TesAno from './paginas/TesAno'
+import TesRelacao from './paginas/TesRelacao'
+import TesCampanhas from './paginas/TesCampanhas'
 
 export default function App() {
   const { carregando, session, igreja, papel } = useSessao()
@@ -56,6 +59,9 @@ export default function App() {
         <Route path="presenca" element={<Presenca />} />
         <Route path="financeiro" element={<Financeiro />} />
         <Route path="financeiro/importar" element={<ImportarFinanceiro />} />
+        <Route path="financeiro/ano" element={<TesAno />} />
+        <Route path="financeiro/relacao" element={<TesRelacao />} />
+        <Route path="financeiro/campanhas" element={<TesCampanhas />} />
         <Route path="sete" element={<Sete />} />
         <Route path="agenda" element={<Agenda />} />
         <Route path="aniversariantes" element={<Aniversariantes />} />

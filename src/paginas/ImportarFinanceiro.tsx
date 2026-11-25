@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import {
-  CAMPOS_FIN, acharCabecalho, chaveLancamento, lerArquivo, lerTodasAbas, montarLinhas,
+  CAMPOS_FIN, acharCabecalho, chaveLancamento, lerArquivo, lerRelacoes, lerTodasAbas, montarLinhas,
   type LinhaFin, type Mapa, type PessoaRef, type Tabela,
 } from '../lib/importarFinanceiro'
-import { ENTRADAS, FUNDOS, NOMES_CATEGORIAS, somar, type Fundo } from '../lib/tesouraria'
+import { ENTRADAS, FUNDOS, NOMES_CATEGORIAS, mesCurto, somar, type Fundo } from '../lib/tesouraria'
 import { dataBR, dinheiro, podeFinanceiro } from '../lib/util'
 import Icone from '../componentes/Icone'
 
@@ -24,12 +24,13 @@ export default function ImportarFinanceiro() {
   const [linhaCab, setLinhaCab] = useState(0)
   const [mapa, setMapa] = useState<Mapa>({})
   const [pessoas, setPessoas] = useState<PessoaRef[]>([])
+  const [jaLancados, setJaLancados] = useState(0)
   const [existentes, setExistentes] = useState<Set<string>>(new Set())
   const [ajustes, setAjustes] = useState<Record<number, Ajuste>>({})
   const [revisando, setRevisando] = useState(false)
   const [erro, setErro] = useState('')
   const [estado, setEstado] = useState<'escolher' | 'conferir' | 'importando' | 'pronto'>('escolher')
-  const [importados, setImportados] = useState({ n: 0 })
+  const [importados, setImportados] = useState({ n: 0, rel: 0 })
   const [modo, setModo] = useState<'todas' | 'uma'>('todas')
   const [temSaldoInicial, setTemSaldoInicial] = useState(false)
 
@@ -57,18 +58,28 @@ export default function ImportarFinanceiro() {
   )
   const saldoInicial = modo === 'todas' && !temSaldoInicial && todas.saldoInicial && todas.saldoInicial.valor > 0 ? todas.saldoInicial : null
 
-  // o que já está lançado no período não entra de novo
-  const periodo = useMemo(() => {
-    const ds = linhas.map((l) => l.data).filter(Boolean).sort() as string[]
-    return ds.length ? [ds[0], ds[ds.length - 1]] : null
+  // meses que a planilha traz: o que já estiver lançado neles é trocado pelo da planilha
+  // (mês com 1 ou 2 linhas "perdidas" numa aba de outro mês não é trocado: só não duplica)
+  const contaMes = useMemo(() => {
+    const c: Record<string, number> = {}
+    for (const l of linhas) if (l.data && !l.fora) c[l.data.slice(0, 7)] = (c[l.data.slice(0, 7)] ?? 0) + 1
+    return c
   }, [linhas])
+  const mesesDaPlanilha = Object.keys(contaMes).filter((m) => contaMes[m] >= 3).sort()
+  const mesesSoltos = Object.keys(contaMes).filter((m) => contaMes[m] < 3).sort()
   useEffect(() => {
-    if (!igreja || !periodo) { setExistentes(new Set()); return }
-    supabase.from('lancamentos').select('data, valor, pessoa_id, nome').eq('igreja_id', igreja.id)
-      .gte('data', periodo[0]).lte('data', periodo[1])
-      .then(({ data }) => setExistentes(new Set((data ?? []).map((l: { data: string; valor: number; pessoa_id: string | null; nome: string | null }) =>
-        chaveLancamento(l.data, l.valor, l.pessoa_id ?? l.nome ?? '')))))
-  }, [igreja?.id, periodo?.[0], periodo?.[1]])
+    if (!igreja || !mesesSoltos.length) { setExistentes(new Set()); return }
+    supabase.from('lancamentos').select('data, valor, pessoa_id, nome, descricao').eq('igreja_id', igreja.id)
+      .gte('data', mesesSoltos[0] + '-01').lte('data', mesesSoltos[mesesSoltos.length - 1] + '-31')
+      .then(({ data }) => setExistentes(new Set((data ?? []).flatMap((l: { data: string; valor: number; pessoa_id: string | null; nome: string | null; descricao: string | null }) =>
+        [chaveLancamento(l.data, l.valor, l.pessoa_id ?? l.nome ?? ''), chaveLancamento(l.data, l.valor, l.descricao ?? '')]))))
+  }, [igreja?.id, mesesSoltos.join()])
+  useEffect(() => {
+    if (!igreja || !mesesDaPlanilha.length) { setJaLancados(0); return }
+    supabase.from('lancamentos').select('id, data').eq('igreja_id', igreja.id).neq('tipo', 'saldo_inicial')
+      .gte('data', mesesDaPlanilha[0] + '-01').lte('data', mesesDaPlanilha[mesesDaPlanilha.length - 1] + '-31')
+      .then(({ data }) => setJaLancados((data ?? []).filter((l: { data: string }) => mesesDaPlanilha.includes(l.data.slice(0, 7))).length))
+  }, [igreja?.id, mesesDaPlanilha.join()])
 
   if (!podeFinanceiro(papel)) return <p className="vazio">Só tesoureiro, pastor e administrador importam lançamentos.</p>
 
@@ -95,16 +106,23 @@ export default function ImportarFinanceiro() {
     setAbaAtual(i); setLinhaCab(c.linha); setMapa(c.mapa); setAjustes({})
   }
 
-  const chaveDe = (l: LinhaFin) => chaveLancamento(l.data!, l.valor!, l.pessoa?.id ?? (l.saida ? (l.descricao || l.nome) : l.nome))
-  const ehDuplicado = (l: LinhaFin) => !!l.data && existentes.has(chaveDe(l))
-  const vai = (l: Linha) => !!l.data && !l.fora && !(ehDuplicado(l) && l.fora !== false)
+  const ehRepetido = (l: LinhaFin) => !!l.data && mesesSoltos.includes(l.data.slice(0, 7))
+    && (existentes.has(chaveLancamento(l.data, l.valor!, l.pessoa?.id ?? l.nome)) || existentes.has(chaveLancamento(l.data, l.valor!, l.descricao)))
+  const vai = (l: Linha) => !!l.data && !l.fora && !ehRepetido(l)
   const vao = linhas.filter(vai)
   const entradas = vao.filter((l) => !l.saida)
   const saidas = vao.filter((l) => l.saida)
-  const duplicados = linhas.filter((l) => ehDuplicado(l) && l.fora !== false).length
   const semData = linhas.filter((l) => !l.data).length
+  // relação de dizimistas/ofertantes (abas "Relação ...")
+  const relacoes = useMemo(() => (modo === 'todas' ? lerRelacoes(abas) : []), [abas, modo])
+  const anoArquivo = useMemo(() => {
+    const c: Record<string, number> = {}
+    for (const l of linhas) if (l.data) c[l.data.slice(0, 4)] = (c[l.data.slice(0, 4)] ?? 0) + 1
+    const melhor = Object.entries(c).sort((x, y) => y[1] - x[1])[0]
+    return melhor ? Number(melhor[0]) : ANO
+  }, [linhas])
   const entendeu = modo === 'todas'
-    ? vao.length > 0
+    ? vao.length > 0 || relacoes.length > 0
     : (mapa.valor !== undefined || mapa.entrada !== undefined) && mapa.data !== undefined && vao.length > 0
   const porFundo = (f: Fundo) => vao.filter((l) => l.fundo === f)
   const meses = modo === 'todas' ? todas.abas : []
@@ -127,14 +145,48 @@ export default function ImportarFinanceiro() {
         descricao: `Saldo anterior (${saldoInicial.aba.trim()})`, fundo: 'geral',
       } as (typeof registros)[number])
     }
+    // planilha sobreposta: apaga o que já havia nesses meses antes de gravar
+    for (const m of mesesDaPlanilha) {
+      const { error } = await supabase.from('lancamentos').delete().eq('igreja_id', igreja!.id).neq('tipo', 'saldo_inicial')
+        .gte('data', m + '-01').lte('data', m + '-31')
+      if (error) { setErro('Não consegui trocar os lançamentos antigos. Tente de novo.'); setEstado('conferir'); return }
+    }
     for (let i = 0; i < registros.length; i += 200) {
       const { error } = await supabase.from('lancamentos').insert(registros.slice(i, i + 200)).select('id')
       if (error) {
-        setErro(/check|tipo|fundo/.test(error.message) ? 'Falta rodar a migração mais nova no Supabase.' : 'A conexão falhou no meio. Mande a planilha de novo: o que já entrou é pulado.')
+        setErro(/check|tipo|fundo/.test(error.message) ? 'Falta rodar a migração mais nova no Supabase.' : 'A conexão falhou no meio. Mande a planilha de novo: os meses dela são trocados por inteiro.')
         setEstado('conferir'); return
       }
     }
-    setImportados({ n: registros.length })
+    // relação: o ano/tipo da planilha substitui o que havia
+    let nRel = 0
+    if (relacoes.length) {
+      const { data: jaTem } = await supabase.from('contribuintes').select('id, codigo').eq('igreja_id', igreja!.id)
+      const ids = new Map(((jaTem ?? []) as { id: string; codigo: string }[]).map((c) => [c.codigo, c.id]))
+      const novos = [...new Set(relacoes.flatMap((r) => r.linhas.map((l) => l.codigo)))].filter((c) => !ids.has(c))
+      if (novos.length) {
+        const { data: criados, error } = await supabase.from('contribuintes')
+          .insert(novos.map((codigo) => ({ igreja_id: igreja!.id, codigo }))).select('id, codigo')
+        if (error) { setErro(/relation|does not exist|schema cache/.test(error.message) ? 'Falta rodar a migração mais nova no Supabase.' : 'Não consegui gravar a relação de dizimistas.'); setEstado('conferir'); return }
+        for (const c of (criados ?? []) as { id: string; codigo: string }[]) ids.set(c.codigo, c.id)
+      }
+      for (const r of relacoes) {
+        await supabase.from('contribuicoes').delete().eq('igreja_id', igreja!.id).eq('ano', anoArquivo).eq('tipo', r.tipo)
+        const regs = r.linhas.flatMap((l) => l.valores.map((v, k) => (v ? {
+          igreja_id: igreja!.id, contribuinte_id: ids.get(l.codigo)!, ano: anoArquivo, mes: k + 1, tipo: r.tipo, valor: v,
+        } : null)).filter(Boolean))
+        // a mesma pessoa pode aparecer em duas linhas: soma
+        const soma = new Map<string, { contribuinte_id: string; mes: number; valor: number } & Record<string, unknown>>()
+        for (const x of regs as { contribuinte_id: string; mes: number; valor: number }[]) {
+          const k = x.contribuinte_id + '|' + x.mes
+          const j = soma.get(k); if (j) j.valor = Math.round((j.valor + x.valor) * 100) / 100; else soma.set(k, { ...x })
+        }
+        const lista = [...soma.values()]
+        for (let i = 0; i < lista.length; i += 200) await supabase.from('contribuicoes').insert(lista.slice(i, i + 200))
+        nRel += new Set(lista.map((x) => x.contribuinte_id)).size
+      }
+    }
+    setImportados({ n: registros.length, rel: nRel })
     setEstado('pronto')
   }
 
@@ -147,7 +199,7 @@ export default function ImportarFinanceiro() {
         <div className="imp-ok">
           <span className="imp-ok-icone"><Icone nome="check" tam={30} /></span>
           <h1 className="titulo">Pronto!</h1>
-          <p className="suave">{importados.n} lançamentos entraram na tesouraria.</p>
+          <p className="suave">{importados.n} lançamentos entraram na tesouraria{importados.rel > 0 && <>, e a relação de dizimistas e ofertantes foi atualizada</>}.</p>
           <div className="acoes">
             <Link className="btn btn-primario" to="/financeiro">Ver a tesouraria</Link>
             <button className="btn" onClick={recomecar}>Mandar outra planilha</button>
@@ -197,17 +249,28 @@ export default function ImportarFinanceiro() {
               <span key={f} className="tag">{FUNDOS[f]}: {porFundo(f).length}</span>
             ))}
           </div>
+          {relacoes.length > 0 && (
+            <p className="imp-saldo">
+              {relacoes.map((r) => `${r.tipo === 'dizimo' ? 'Dizimistas' : 'Ofertantes'}: ${r.linhas.filter((l) => l.valores.some(Boolean)).length} com contribuição em ${anoArquivo}`).join(' · ')}
+              {' '}(da aba de relação, sem mexer no caixa)
+            </p>
+          )}
           {saldoInicial && (
             <p className="imp-saldo">Saldo anterior de {saldoInicial.aba.trim()}: <b>{dinheiro(saldoInicial.valor)}</b> (entra como saldo inicial do caixa)</p>
           )}
-          {(duplicados > 0 || semData > 0) && (
+          {jaLancados > 0 && (
+            <p className="imp-troca">
+              <b>Já existem {jaLancados} lançamentos</b> em {mesesDaPlanilha.length === 1 ? mesCurto(mesesDaPlanilha[0]) : `${mesCurto(mesesDaPlanilha[0])} a ${mesCurto(mesesDaPlanilha[mesesDaPlanilha.length - 1])}`}.
+              Eles vão ser <b>trocados</b> pelos desta planilha, sem duplicar.
+            </p>
+          )}
+          {semData > 0 && (
             <ul className="imp-fora">
-              {duplicados > 0 && <li>{duplicados} já estavam lançados e foram pulados</li>}
               {semData > 0 && <li>{semData} {semData === 1 ? 'linha sem data ficou' : 'linhas sem data ficaram'} de fora (anotações de rodapé, como a lista de ofertas de missões)</li>}
             </ul>
           )}
           <button className="btn btn-primario btn-grande" onClick={importar} disabled={estado === 'importando'}>
-            {estado === 'importando' ? 'Importando…' : `Importar ${vao.length + (saldoInicial ? 1 : 0)} lançamentos`}
+            {estado === 'importando' ? 'Importando…' : vao.length ? `Importar ${vao.length + (saldoInicial ? 1 : 0)} lançamentos${relacoes.length ? ' e a relação' : ''}` : 'Importar a relação'}
           </button>
           <button className="link" onClick={() => setRevisando(!revisando)}>{revisando ? 'Esconder a lista' : 'Ver a lista antes'}</button>
         </section>
@@ -258,7 +321,7 @@ export default function ImportarFinanceiro() {
                             {pessoas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
                           </select>
                         )}
-                      {ehDuplicado(l) && <span className="tag tag-alerta">já lançado</span>}
+                      {ehRepetido(l) && <span className="tag tag-alerta">já lançado</span>}
                     </div>
                   </div>
                 </li>

@@ -96,6 +96,24 @@ const lancamentos: Linha[] = [
   ]),
 ]
 
+// campanha de exemplo
+lancamentos.push(
+  { id: 'cp1', igreja_id: IG, tipo: 'oferta', valor: 1250, data: dia(-25), pessoa_id: null, nome: null, descricao: 'Oferta especial', campanha: 'Reforma do telhado', forma: 'pix', criado_por: CARLOS, criado_em: agora() },
+  { id: 'cp2', igreja_id: IG, tipo: 'oferta', valor: 840, data: dia(-11), pessoa_id: null, nome: null, descricao: 'Bazar', campanha: 'Reforma do telhado', forma: 'dinheiro', criado_por: CARLOS, criado_em: agora() },
+  { id: 'cp3', igreja_id: IG, tipo: 'saida', valor: 1600, data: dia(-6), pessoa_id: null, nome: null, categoria: 'Manutenção e reforma', descricao: 'Telhas e calhas', campanha: 'Reforma do telhado', forma: 'pix', criado_por: CARLOS, criado_em: agora() },
+)
+
+// relação de dizimistas/ofertantes (código anonimizado, como na planilha)
+const ANO_DEMO = new Date().getFullYear(), MES_DEMO = new Date().getMonth() + 1
+const contribuintes: Linha[] = ['703xxx68FF', '796xxx87GC', '339xxx91GF', '759xxx04RA', '702xxx58TS', '943xxx00MC', '458xxx34DC', '806xxx91IC', '014xxx25LH', '052xxx58NB']
+  .map((codigo, i) => ({ id: 'ct' + i, igreja_id: IG, codigo, nome: null, pessoa_id: i === 0 ? 'p8' : null }))
+const contribuicoes: Linha[] = contribuintes.flatMap((c, i) => Array.from({ length: MES_DEMO }, (_, k) => k + 1)
+  .filter((m) => i < 5 || (i < 8 && (m + i) % 3 === 0))
+  .flatMap((m) => [
+    { id: `cb${i}-${m}`, igreja_id: IG, contribuinte_id: c.id, ano: ANO_DEMO, mes: m, tipo: 'dizimo', valor: [1000, 800, 400, 1500, 130, 500, 300, 100][i] ?? 100 },
+    ...(i % 2 ? [{ id: `co${i}-${m}`, igreja_id: IG, contribuinte_id: c.id, ano: ANO_DEMO, mes: m, tipo: 'oferta', valor: 20 + i * 10 }] : []),
+  ]))
+
 const agenda: Linha[] = [
   { id: 'a1', igreja_id: IG, titulo: 'Visita · Dona Cida Ferreira', tipo: 'visita', inicio: quando(0, '15:00'), local: pessoas[11].endereco, pessoa_id: 'p11', responsavel_id: EU, feito: false },
   { id: 'a2', igreja_id: IG, titulo: 'Culto no lar · Família Pires', tipo: 'culto_no_lar', inicio: quando(0, '20:00'), local: pessoas[7].endereco, pessoa_id: 'p7', responsavel_id: EU, feito: false },
@@ -119,7 +137,7 @@ const db: Record<string, Linha[]> = {
     { igreja_id: IG, user_id: PAULA, nome: 'Paula Freitas', papel: 'obreiro', pessoa_id: null },
   ],
   convites: [{ id: 'cv1', igreja_id: IG, email: 'diacono.jose@email.com', nome: 'José Diácono', papel: 'obreiro' }],
-  pessoas, contatos, cultos, presencas, lancamentos, agenda,
+  pessoas, contatos, cultos, presencas, lancamentos, agenda, contribuintes, contribuicoes,
 }
 
 // Versão particular: se a página trouxer membros reais (window.__SEED_PESSOAS__),
@@ -128,7 +146,7 @@ const seedReal = (globalThis as any).__SEED_PESSOAS__ as Linha[] | undefined
 if (seedReal) {
   db.pessoas = seedReal
   db.equipe = [{ igreja_id: IG, user_id: EU, nome: 'Pastor', papel: 'admin', pessoa_id: null }]
-  db.convites = []; db.contatos = []; db.cultos = []; db.presencas = []; db.lancamentos = []; db.agenda = []
+  db.convites = []; db.contatos = []; db.cultos = []; db.presencas = []; db.lancamentos = []; db.agenda = []; db.contribuintes = []; db.contribuicoes = []
 }
 
 // "ver como": troca o cargo de quem está usando a demonstração
