@@ -820,3 +820,11 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
   .quadro-hoje { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
   .qh-col + .qh-col { border-top: none; border-left: 1px solid var(--linha); }
 }
+/* tabelas mês a mês: colunas alternadas com fundo leve, linha destacada ao passar o mouse */
+.tabela-ano .mes-b, .tabela-relacao .mes-b { background: #f4f7f4; }
+.tabela-ano thead th.mes-atual, .tabela-relacao thead th.mes-atual { color: var(--verde-escuro); font-weight: 800; box-shadow: inset 0 -2px 0 var(--verde); }
+.tabela-relacao tbody tr:hover td, .tabela-relacao tbody tr:hover th, .tabela-ano tbody tr:hover td { background: #e9f1eb; }
+.tabela-relacao tbody tr:hover td.tot { background: #dce9df; }
+.tabela-relacao tbody th { background: var(--papel); }
+.tabela-relacao .cel { color: var(--tinta); }
+.tabela-relacao .cel:not(.cheia) { color: #c3ccc5; }

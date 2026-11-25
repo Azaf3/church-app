@@ -167,7 +167,7 @@ export default function TesRelacao() {
             <p className="dica sem-impressao">Toque num mês pra lançar, corrigir ou tirar um valor. Toque no nome pra ligar à ficha da pessoa.</p>
             <div className="tabela-rolar">
               <table className="tabela-ano tabela-relacao">
-                <thead><tr><th>Contribuinte</th>{tipo === 'dizimo' && <th className="esq">Situação</th>}{MES3.map((m) => <th key={m}>{m}</th>)}<th>Total</th></tr></thead>
+                <thead><tr><th>Contribuinte</th>{tipo === 'dizimo' && <th className="esq">Situação</th>}{MES3.map((m, i) => <th key={m} className={faixa(i)}>{m}</th>)}<th>Total</th></tr></thead>
                 <tbody>
                   {lista.map((l) => (
                     <tr key={l.c.id}>
@@ -178,14 +178,14 @@ export default function TesRelacao() {
                             : <span className={'sit-tag ' + (l.nivel === 'atencao' ? 'aviso' : 'atraso')}>desde {MES3[l.ultimo - 1]}</span>}</td>
                       )}
                       {l.vals.map((v, k) => (
-                        <td key={k}><button className={'cel' + (v ? ' cheia' : '')} onClick={() => setCelula({ c: l.c, mes: k + 1 })}>{v ? numero(v) : '·'}</button></td>
+                        <td key={k} className={faixa(k)}><button className={'cel' + (v ? ' cheia' : '')} onClick={() => setCelula({ c: l.c, mes: k + 1 })}>{v ? numero(v) : '·'}</button></td>
                       ))}
                       <td className="tot">{l.total ? numero(l.total) : '–'}</td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr><th>Total</th>{tipo === 'dizimo' && <td />}{r.totMes.map((v, k) => <td key={k}>{v ? numero(v) : '–'}</td>)}<td className="tot">{numero(r.total)}</td></tr>
+                  <tr><th>Total</th>{tipo === 'dizimo' && <td />}{r.totMes.map((v, k) => <td key={k} className={faixa(k)}>{v ? numero(v) : '–'}</td>)}<td className="tot">{numero(r.total)}</td></tr>
                 </tfoot>
               </table>
             </div>
@@ -278,3 +278,6 @@ function FormContribuinte({ inicial, pessoas, salvar, apagar }: {
 }
 
 const numero = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 })
+
+// meses alternados com um fundo bem leve, pra separar as colunas
+const faixa = (i: number) => (i % 2 ? 'mes-b' : 'mes-a') + (i === new Date().getMonth() ? ' mes-atual' : '')

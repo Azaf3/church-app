@@ -126,7 +126,7 @@ export default function TesAno() {
         <div className="tabela-rolar">
           <table className="tabela-ano">
             <thead>
-              <tr><th /> {MES3.map((m) => <th key={m}>{m}</th>)}<th>Total</th><th>Média</th></tr>
+              <tr><th /> {MES3.map((m, i) => <th key={m} className={faixa(i)}>{m}</th>)}<th>Total</th><th>Média</th></tr>
             </thead>
             <tbody>
               {linhasTabela.map(([nome, f, cls]) => {
@@ -134,9 +134,9 @@ export default function TesAno() {
                 return (
                   <tr key={nome} className={cls}>
                     <th>{nome}</th>
-                    {r.meses.map((m) => {
+                    {r.meses.map((m, i) => {
                       const v = f(m)
-                      return <td key={m.ym} className={cls === 'res' ? (v < 0 ? 'neg' : 'pos') : ''}>{m.tem ? numero(v) : '–'}</td>
+                      return <td key={m.ym} className={faixa(i) + (cls === 'res' ? (v < 0 ? ' neg' : ' pos') : '')}>{m.tem ? numero(v) : '–'}</td>
                     })}
                     <td className="tot">{numero(total)}</td>
                     <td className="tot">{nome.startsWith('Saldo') ? '' : numero(total / r.n)}</td>
@@ -166,3 +166,6 @@ export default function TesAno() {
 }
 
 const numero = (v: number) => (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+// meses alternados com um fundo bem leve, pra separar as colunas
+const faixa = (i: number) => (i % 2 ? 'mes-b' : 'mes-a') + (i === new Date().getMonth() ? ' mes-atual' : '')
