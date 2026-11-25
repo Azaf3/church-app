@@ -15,3 +15,9 @@ export const APP_COR = '#2b6439'
 // (a que tem "cadastro_aberto" no banco) e a equipe dá os cargos depois.
 // true = cada igreja nova se cadastra sozinha (pra vender como produto).
 export const NOVAS_IGREJAS = false
+
+// cultos fixos da igreja: dia da semana (0 = domingo ... 6 = sábado)
+export const CULTOS = [
+  { titulo: 'Culto de domingo', dia: 0, horario: '10h às 12h' },
+  { titulo: 'Culto de oração', dia: 5, horario: 'sexta, 19h às 21h' },
+]

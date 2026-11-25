@@ -6,6 +6,10 @@ import { dataBR, hojeISO, primeiroNome } from '../lib/util'
 import BotaoWhats from '../componentes/BotaoWhats'
 import Icone from '../componentes/Icone'
 import Folha from '../componentes/Folha'
+import { CULTOS } from '../config'
+
+// última data (hoje ou antes) que cai no dia da semana do culto
+const ultimoDia = (dia: number) => { const d = new Date(); d.setDate(d.getDate() - ((d.getDay() - dia + 7) % 7)); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
 
 export default function Presenca() {
   const { igreja } = useSessao()
@@ -32,13 +36,19 @@ export default function Presenca() {
 
   const [criando, setCriando] = useState(false)
   const [novaData, setNovaData] = useState(hojeISO())
-  const [novoTitulo, setNovoTitulo] = useState('Culto de domingo')
+  const [novoTitulo, setNovoTitulo] = useState('Culto especial')
+  const [outroDia, setOutroDia] = useState(false)
 
+  // abre a chamada do culto; se ainda não existe, cria
+  async function abrirCulto(titulo: string, data: string) {
+    const ja = cultos.find((c) => c.data === data && c.titulo === titulo)
+    if (ja) { setCultoId(ja.id); setAba('chamada'); setCriando(false); return }
+    const { data: c } = await supabase.from('cultos').insert({ igreja_id: igreja!.id, data, titulo: titulo || 'Culto' }).select().single()
+    if (c) { setCultos([c, ...cultos].sort((a, b) => b.data.localeCompare(a.data))); setCultoId(c.id); setAba('chamada'); setCriando(false); setOutroDia(false) }
+  }
   async function criarCulto(e: FormEvent) {
     e.preventDefault()
-    const { data: c } = await supabase.from('cultos')
-      .insert({ igreja_id: igreja!.id, data: novaData, titulo: novoTitulo || 'Culto' }).select().single()
-    if (c) { setCultos([c, ...cultos].sort((a, b) => b.data.localeCompare(a.data))); setCultoId(c.id); setAba('chamada'); setCriando(false) }
+    await abrirCulto(novoTitulo, novaData)
   }
 
   async function marcar(p: Pessoa) {
@@ -64,7 +74,7 @@ export default function Presenca() {
     <>
       <div className="cabecalho">
         <h1 className="titulo">Presença</h1>
-        <button className="btn btn-primario" onClick={() => setCriando(true)}><Icone nome="mais_um" tam={18} /> Novo culto</button>
+        <button className="btn btn-primario" onClick={() => setCriando(true)}><Icone nome="mais_um" tam={18} /> Fazer chamada</button>
       </div>
 
       {cultos.length === 0 ? (
@@ -116,12 +126,29 @@ export default function Presenca() {
         </>
       )}
 
-      <Folha titulo="Novo culto" aberta={criando} fechar={() => setCriando(false)}>
-        <form className="form" onSubmit={criarCulto}>
-          <label>Nome<input value={novoTitulo} onChange={(e) => setNovoTitulo(e.target.value)} /></label>
-          <label>Data<input type="date" required value={novaData} onChange={(e) => setNovaData(e.target.value)} /></label>
-          <button className="btn btn-primario">Criar e fazer chamada</button>
-        </form>
+      <Folha titulo="Qual culto?" aberta={criando} fechar={() => setCriando(false)}>
+        <div className="escolha-culto">
+          {CULTOS.map((c) => {
+            const data = ultimoDia(c.dia)
+            const ja = cultos.find((x) => x.data === data && x.titulo === c.titulo)
+            return (
+              <button key={c.titulo} className="opcao-culto" onClick={() => abrirCulto(c.titulo, data)}>
+                <strong>{c.titulo}</strong>
+                <span>{dataBR(data)}{data === hojeISO() ? ' (hoje)' : ''} · {c.horario}</span>
+                <em>{ja ? 'Abrir a chamada' : 'Fazer a chamada'}</em>
+              </button>
+            )
+          })}
+        </div>
+        {!outroDia
+          ? <button className="link" onClick={() => setOutroDia(true)}>Outro dia (evento especial)</button>
+          : (
+            <form className="form" onSubmit={criarCulto}>
+              <label>Nome<input value={novoTitulo} onChange={(e) => setNovoTitulo(e.target.value)} /></label>
+              <label>Data<input type="date" required value={novaData} onChange={(e) => setNovaData(e.target.value)} /></label>
+              <button className="btn btn-primario">Criar e fazer chamada</button>
+            </form>
+          )}
       </Folha>
     </>
   )

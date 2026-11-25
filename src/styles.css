@@ -890,3 +890,9 @@ span.fixa-valor { width: 110px; text-align: right; color: var(--suave); font-var
 @media (min-width: 900px) { .lista:not(.plana):not(.agrupada) { align-items: stretch; } }
 /* títulos de seção sem caixa alta */
 .secao { text-transform: none; letter-spacing: 0; font-family: var(--titulo); font-size: 16px; font-weight: 600; color: var(--verde-escuro); margin: 24px 0 10px; }
+.escolha-culto { display: grid; gap: 10px; margin-bottom: 8px; }
+.opcao-culto { display: grid; gap: 2px; text-align: left; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--linha); background: var(--papel); cursor: pointer; font: inherit; color: inherit; }
+.opcao-culto:hover { border-color: var(--verde); background: #f3f8f4; }
+.opcao-culto strong { font-family: var(--titulo); font-size: 17px; font-weight: 600; color: var(--verde-escuro); }
+.opcao-culto span { color: var(--suave); font-size: 14px; }
+.opcao-culto em { font-style: normal; font-weight: 700; color: var(--verde); font-size: 14px; margin-top: 4px; }
