@@ -178,7 +178,8 @@ export default function Hoje() {
         </section>
       )}
 
-      <div className="cartoes-hoje">
+      <div className="quadro-hoje">
+        <div className="qh-col">
         {minhas.length > 0 && (
           <section className="painel">
             <h2>Pra você cuidar</h2>
@@ -218,6 +219,8 @@ export default function Hoje() {
               {faltaram.length > 6 && <Link className="link" to="/presenca">Ver todos os {faltaram.length}</Link>}
             </section>
         )}
+        </div>
+        <div className="qh-col">
         <section className="painel">
             <h2>Hoje na agenda</h2>
             {agenda.length === 0 && <p className="vazio">Nada marcado pra hoje. <Link className="link" to="/agenda?novo=1">Marcar visita</Link></p>}
@@ -247,6 +250,7 @@ export default function Hoje() {
               })}
             </ul>
           </section>
+        </div>
       </div>
     </div>
   )

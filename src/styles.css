@@ -810,3 +810,13 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
 .lista.agrupada li:first-child .item { border-top: none; }
 .lista.agrupada .item:active { background: #f3f6f3; }
 .lista-topo h2 { font-family: var(--titulo); font-size: 17px; font-weight: 600; }
+/* Meu dia: um quadro só, dividido em duas colunas, sem cartões soltos */
+.quadro-hoje { background: var(--papel); border: 1px solid var(--linha); border-radius: 20px; overflow: hidden; display: grid; }
+.qh-col { display: grid; align-content: start; }
+.qh-col + .qh-col { border-top: 1px solid var(--linha); }
+.quadro-hoje .painel { border: none; border-radius: 0; margin: 0; background: transparent; padding: 20px 22px 14px; }
+.quadro-hoje .painel + .painel { border-top: 1px solid var(--linha); }
+@media (min-width: 900px) {
+  .quadro-hoje { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+  .qh-col + .qh-col { border-top: none; border-left: 1px solid var(--linha); }
+}
