@@ -117,7 +117,7 @@ const contribuicoes: Linha[] = contribuintes.flatMap((c, i) => Array.from({ leng
 
 const avisos: Linha[] = [
   { id: 'av1', igreja_id: IG, tipo: 'evento', titulo: 'Culto de Santa Ceia', data: dia(4), hora: '10h', local: 'Templo', texto: null, ate: null },
-  { id: 'av2', igreja_id: IG, tipo: 'evento', titulo: 'Culto de oração', data: dia(2), hora: '19h', local: 'Templo', texto: null, ate: null },
+  { id: 'av2', igreja_id: IG, tipo: 'evento', titulo: 'Vigília dos jovens', data: dia(2), hora: '22h', local: 'Templo', texto: null, ate: null },
   { id: 'av3', igreja_id: IG, tipo: 'aviso', titulo: 'Inscrições abertas pro retiro de jovens', data: null, hora: null, local: null, texto: 'Falar com a secretaria até dia 10.', ate: dia(20) },
 ]
 
@@ -145,7 +145,33 @@ const db: Record<string, Linha[]> = {
   ],
   convites: [{ id: 'cv1', igreja_id: IG, email: 'diacono.jose@email.com', nome: 'José Diácono', papel: 'obreiro', titulo: 'Diácono', pessoa_id: null }],
   pessoas, contatos, cultos, presencas, lancamentos, agenda, contribuintes, contribuicoes, avisos,
+  pedidos: [], intercessoes: [], confirmacoes: [],
 }
+
+// área do membro: pedidos de oração e visita, "estou orando" e "vou participar"
+;(() => {
+  const quem = (nome: string) => db.pessoas.find((x) => x.nome === nome)
+  const ped = (nome: string, d: Linha) => {
+    const p = quem(nome)
+    const l = { id: uid(), igreja_id: IG, user_id: 'u-' + (p?.id ?? uid()), pessoa_id: p?.id ?? null, nome: p?.nome ?? nome,
+      publico: false, quando: null, texto: null, status: 'aberto', resposta: null, atendido_por: null, marcado_para: null, agenda_id: null,
+      criado_em: dia(-(d.dias ?? 1)) + 'T12:00:00.000Z', atualizado_em: agora(), ...d }
+    delete (l as any).dias
+    db.pedidos.push(l)
+    return l
+  }
+  const cirurgia = ped('Fernanda Reis', { tipo: 'oracao', publico: true, texto: 'Pela cirurgia do meu pai na quinta-feira. Que Deus guie as mãos dos médicos.', status: 'orando', atendido_por: 'Pr. Marcos Vieira', dias: 2 })
+  const emprego = ped('João Batista Souza', { tipo: 'oracao', publico: true, texto: 'Por emprego. Estou há três meses procurando.', dias: 1 })
+  ped('Márcia Oliveira', { tipo: 'oracao', publico: true, texto: 'Pela aprovação no concurso.', status: 'respondido', resposta: 'Fui aprovada! Obrigada a todos que oraram comigo.', dias: 12 })
+  ped('Sandra Mendes', { tipo: 'oracao', texto: 'Pelo meu casamento. Estamos passando por um momento difícil.', dias: 1 })
+  ped('Seu Antônio Ribeiro', { tipo: 'visita', quando: 'terça à tarde', texto: 'Estou sem conseguir ir aos cultos por causa da perna.', dias: 1 })
+  ped('Lucas Andrade', { tipo: 'conversa', quando: 'depois do culto de domingo', dias: 3 })
+  for (let i = 0; i < 6; i++) db.intercessoes.push({ pedido_id: cirurgia.id, user_id: 'u-int' + i, igreja_id: IG })
+  for (let i = 0; i < 2; i++) db.intercessoes.push({ pedido_id: emprego.id, user_id: 'u-int' + i, igreja_id: IG })
+  const nomesConf = ['Aline Castro', 'Eduardo Pires', 'Natália Rocha', 'Patrícia Gomes', 'Roberto Alves', 'Thiago Martins', 'Kelly Cristina', 'Larissa Campos']
+  nomesConf.forEach((n, i) => db.confirmacoes.push({ aviso_id: 'av1', user_id: 'u-c' + i, igreja_id: IG, nome: n, criado_em: agora() }))
+  nomesConf.slice(0, 3).forEach((n, i) => db.confirmacoes.push({ aviso_id: 'av2', user_id: 'u-c' + i, igreja_id: IG, nome: n, criado_em: agora() }))
+})()
 
 // Versão particular: se a página trouxer membros reais (window.__SEED_PESSOAS__),
 // usa só eles e começa o resto vazio, sem os dados de exemplo.
@@ -154,6 +180,7 @@ if (seedReal) {
   db.pessoas = seedReal
   db.equipe = [{ igreja_id: IG, user_id: EU, nome: 'Pastor', papel: 'admin', pessoa_id: null }]
   db.convites = []; db.contatos = []; db.cultos = []; db.presencas = []; db.lancamentos = []; db.agenda = []; db.contribuintes = []; db.contribuicoes = []
+  db.pedidos = []; db.intercessoes = []; db.confirmacoes = []
 }
 
 // "ver como": troca o cargo de quem está usando a demonstração
@@ -169,6 +196,7 @@ const PADROES: Record<string, Linha> = {
   cultos: { titulo: 'Culto' },
   contatos: { meio: 'whatsapp' },
   despesas_fixas: { ativa: true, fundo: 'geral', dia: 5 },
+  pedidos: { publico: false, status: 'aberto', resposta: null, atendido_por: null, marcado_para: null, agenda_id: null, quando: null, texto: null },
 }
 
 // ---------- Query builder ----------
@@ -208,9 +236,10 @@ class Consulta {
     if (this.op === 'insert') {
       const lista = Array.isArray(this.dados) ? this.dados : [this.dados]
       res = lista.map((d: Linha) => ({ id: uid(), criado_em: agora(), ...PADROES[this.tabela], ...d }))
+      if (this.tabela === 'pedidos' || this.tabela === 'confirmacoes') res.forEach(preencherAutor)
       t.push(...res)
     } else if (this.op === 'update') {
-      res = t.filter(casa); res.forEach((l) => Object.assign(l, this.dados))
+      res = t.filter(casa); res.forEach((l) => Object.assign(l, this.dados, this.tabela === 'pedidos' ? { atualizado_em: agora() } : {}))
     } else if (this.op === 'delete') {
       res = t.filter(casa); db[this.tabela] = t.filter((l) => !casa(l))
     } else {
@@ -239,6 +268,19 @@ class Consulta {
   }
 }
 
+// ---------- Gatilhos do banco (simulados) ----------
+function preencherAutor(l: Linha) {
+  const e = db.equipe.find((x) => x.igreja_id === l.igreja_id && x.user_id === l.user_id)
+  const p = e?.pessoa_id ? db.pessoas.find((x) => x.id === e.pessoa_id) : null
+  l.nome = p?.nome ?? e?.nome ?? null
+  if ('tipo' in l) { l.pessoa_id = e?.pessoa_id ?? null; l.status = 'aberto'; l.atualizado_em = agora() }
+}
+const contarPor = (linhas: Linha[], chave: string, igreja: string) => {
+  const m = new Map<string, number>()
+  linhas.filter((l) => l.igreja_id === igreja).forEach((l) => m.set(l[chave], (m.get(l[chave]) ?? 0) + 1))
+  return [...m.entries()].map(([k, total]) => ({ [chave]: k, total }))
+}
+
 // ---------- Convites (simula a função do banco) ----------
 function aceitarConvitesDe(user: { id: string; email: string } | null) {
   if (!user) return 0
@@ -263,6 +305,8 @@ export const supabase: any = {
       return { data: id, error: null }
     }
     if (nome === 'aceitar_convites') return { data: aceitarConvitesDe(sessao?.user), error: null }
+    if (nome === 'confirmados') return { data: contarPor(db.confirmacoes, 'aviso_id', args.p_igreja), error: null }
+    if (nome === 'intercessores') return { data: contarPor(db.intercessoes, 'pedido_id', args.p_igreja), error: null }
     if (nome === 'auto_cadastro') {
       const ja = db.equipe.find((e) => e.user_id === sessao?.user.id)
       if (ja?.pessoa_id) return { data: ja.igreja_id, error: null }

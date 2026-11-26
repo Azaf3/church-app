@@ -31,6 +31,8 @@ export const ehEquipe = (p?: Papel) => !!p && p !== 'membro'
 export const podeFinanceiro = (p?: Papel) => p === 'admin' || p === 'pastor' || p === 'tesoureiro'
 export const podeEquipe = (p?: Papel) => p === 'admin' || p === 'pastor'
 export const podeSecretaria = (p?: Papel) => p === 'admin' || p === 'pastor' || p === 'secretario'
+// pedidos de oração e de visita/conversa dos membros (a oração "só pros pastores" o banco mostra só pra pastor)
+export const podePedidos = (p?: Papel) => p === 'admin' || p === 'pastor' || p === 'obreiro' || p === 'secretario'
 
 export function linkWhats(telefone: string | null, texto = '') {
   if (!telefone) return null
@@ -59,6 +61,19 @@ export const dataBR = (iso: string | null) => {
   const [a, m, d] = iso.slice(0, 10).split('-')
   return `${d}/${m}${a !== String(new Date().getFullYear()) ? '/' + a : ''}`
 }
+
+const SEMANA_CURTA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
+export const diaDaSemana = (iso: string) => SEMANA_CURTA[new Date(`${iso.slice(0, 10)}T12:00:00`).getDay()]
+
+// próxima data (hoje incluso) de um dia da semana: 0 = domingo ... 6 = sábado
+export function proximoDia(dia: number) {
+  const d = new Date(`${hojeISO()}T12:00:00`)
+  d.setDate(d.getDate() + ((dia - d.getDay() + 7) % 7))
+  return d.toLocaleDateString('sv-SE')
+}
+
+// "sáb, 05/12 às 19:30"
+export const quandoBR = (iso: string) => `${diaDaSemana(new Date(iso).toLocaleDateString('sv-SE'))}, ${dataBR(new Date(iso).toLocaleDateString('sv-SE'))} às ${horaBR(iso)}`
 
 export const horaBR = (iso: string) =>
   new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })

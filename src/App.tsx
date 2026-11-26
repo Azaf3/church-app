@@ -24,6 +24,7 @@ import Secretaria from './paginas/Secretaria'
 import TesAno from './paginas/TesAno'
 import TesRelacao from './paginas/TesRelacao'
 import TesCampanhas from './paginas/TesCampanhas'
+import Pedidos from './paginas/Pedidos'
 
 export default function App() {
   const { carregando, session, igreja, papel } = useSessao()
@@ -64,6 +65,7 @@ export default function App() {
         <Route path="sete" element={<Sete />} />
         <Route path="secretaria" element={<Secretaria />} />
         <Route path="agenda" element={<Agenda />} />
+        <Route path="pedidos" element={<Pedidos />} />
         <Route path="aniversariantes" element={<Aniversariantes />} />
         <Route path="equipe" element={<Equipe />} />
         <Route path="mais" element={<Mais />} />

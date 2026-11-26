@@ -1,7 +1,7 @@
 import FaixaDemo from './FaixaDemo'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useSessao } from '../lib/sessao'
-import { PAPEIS, podeEquipe, podeFinanceiro, podeSecretaria, primeiroNome, rotuloCargo } from '../lib/util'
+import { PAPEIS, podeEquipe, podeFinanceiro, podePedidos, podeSecretaria, primeiroNome, rotuloCargo } from '../lib/util'
 import FundoVivo from './FundoVivo'
 import Icone from './Icone'
 import LogoIgreja from './LogoIgreja'
@@ -27,6 +27,7 @@ export default function Layout() {
       { para: '/pessoas', nome: 'Pessoas', icone: 'pessoas' },
       { para: '/jornada', nome: 'Jornada', icone: 'jornada' },
       { para: '/agenda', nome: 'Agenda pastoral', icone: 'agenda' },
+      ...(podePedidos(papel) ? [{ para: '/pedidos', nome: 'Pedidos', icone: 'coracao' }] : []),
       { para: '/aniversariantes', nome: 'Aniversariantes', icone: 'bolo' },
     ] },
     { titulo: 'Gestão', itens: [

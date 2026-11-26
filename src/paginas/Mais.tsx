@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useSessao } from '../lib/sessao'
-import { PAPEIS, podeEquipe, podeFinanceiro, podeSecretaria, rotuloCargo } from '../lib/util'
+import { PAPEIS, podeEquipe, podeFinanceiro, podePedidos, podeSecretaria, rotuloCargo } from '../lib/util'
 import Icone from '../componentes/Icone'
 
 export default function Mais() {
@@ -8,6 +8,7 @@ export default function Mais() {
   const eu = equipe.find((e) => e.user_id === userId)
 
   const itens = [
+    ...(podePedidos(papel) ? [{ para: '/pedidos', nome: 'Pedidos de oração e visita', icone: 'coracao' }] : []),
     ...(podeSecretaria(papel) ? [{ para: '/secretaria', nome: 'Secretaria', icone: 'pasta' }] : []),
     ...(podeFinanceiro(papel) ? [{ para: '/financeiro', nome: 'Tesouraria', icone: 'dinheiro' }, { para: '/sete', nome: 'Seminário SETE', icone: 'livro' }] : []),
     { para: '/aniversariantes', nome: 'Aniversariantes', icone: 'bolo' },

@@ -7,7 +7,7 @@ import { dataBR, hojeISO, horaBR, inicioDia } from '../lib/util'
 import Folha from '../componentes/Folha'
 import Icone from '../componentes/Icone'
 
-const TIPOS = {
+export const TIPOS = {
   visita: 'Visita', culto_no_lar: 'Culto no lar', aconselhamento: 'Aconselhamento', reuniao: 'Reunião', outro: 'Outro',
 } as const
 
@@ -18,6 +18,7 @@ export default function Agenda() {
   const [so, setSo] = useState<'minha' | 'todas'>('todas')
   const [params] = useSearchParams()
   const [novo, setNovo] = useState(params.get('novo') === '1')
+  const [pedidosVisita, setPedidosVisita] = useState(0)
 
   useEffect(() => {
     if (!igreja) return
@@ -26,6 +27,8 @@ export default function Agenda() {
       .then(({ data }) => setItens(data ?? []))
     supabase.from('pessoas').select('id, nome, endereco').eq('igreja_id', igreja.id).eq('ativo', true).order('nome')
       .then(({ data }) => setPessoas((data as Pessoa[]) ?? []))
+    supabase.from('pedidos').select('id').eq('igreja_id', igreja.id).neq('tipo', 'oracao').eq('status', 'aberto')
+      .then(({ data }) => setPedidosVisita(data?.length ?? 0))
   }, [igreja?.id])
 
   const porDia = useMemo(() => {
@@ -56,6 +59,14 @@ export default function Agenda() {
         <h1 className="titulo">Agenda pastoral</h1>
         <button className="btn btn-primario" onClick={() => setNovo(true)}><Icone nome="mais_um" tam={18} /> Marcar</button>
       </div>
+
+      {pedidosVisita > 0 && (
+        <Link to="/pedidos" className="cartao destaque aviso-pedidos">
+          <Icone nome="conversa" tam={20} />
+          <span><strong>{pedidosVisita === 1 ? '1 pedido de visita ou conversa' : `${pedidosVisita} pedidos de visita ou conversa`}</strong> esperando a equipe marcar</span>
+          <Icone nome="seta" tam={18} />
+        </Link>
+      )}
 
       <div className="seg">
         <button className={so === 'todas' ? 'ativo' : ''} onClick={() => setSo('todas')}>Da equipe</button>
@@ -94,16 +105,18 @@ export default function Agenda() {
   )
 }
 
-function FormCompromisso({ igrejaId, userId, equipe, pessoas, salvo }: {
+export interface InicialCompromisso { tipo: Compromisso['tipo']; pessoaId: string | null; titulo: string; local: string | null }
+
+export function FormCompromisso({ igrejaId, userId, equipe, pessoas, salvo, inicial }: {
   igrejaId: string; userId: string; equipe: { user_id: string; nome: string }[]
-  pessoas: Pessoa[]; salvo: (c: Compromisso) => void
+  pessoas: Pessoa[]; salvo: (c: Compromisso) => void; inicial?: InicialCompromisso
 }) {
-  const [tipo, setTipo] = useState<Compromisso['tipo']>('visita')
-  const [pessoaId, setPessoaId] = useState('')
-  const [titulo, setTitulo] = useState('')
+  const [tipo, setTipo] = useState<Compromisso['tipo']>(inicial?.tipo ?? 'visita')
+  const [pessoaId, setPessoaId] = useState(inicial?.pessoaId ?? '')
+  const [titulo, setTitulo] = useState(inicial?.titulo ?? '')
   const [data, setData] = useState(hojeISO())
   const [hora, setHora] = useState('19:30')
-  const [local, setLocal] = useState('')
+  const [local, setLocal] = useState(inicial?.local ?? '')
   const [resp, setResp] = useState(userId)
 
   function escolherPessoa(id: string) {

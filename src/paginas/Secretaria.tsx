@@ -285,6 +285,7 @@ function Avisos() {
   const [editando, setEditando] = useState<Aviso | 'novo' | null>(null)
   const [copiado, setCopiado] = useState(false)
   const [erro, setErro] = useState('')
+  const [vao, setVao] = useState<Record<string, string[]>>({})
 
   function carregar() {
     if (!igreja) return
@@ -292,6 +293,13 @@ function Avisos() {
       .then(({ data, error }) => {
         if (error) setErro(/relation|schema cache|does not exist/.test(error.message) ? 'Falta rodar a migração mais nova no Supabase.' : 'Não consegui carregar.')
         setAvisos((data as Aviso[]) ?? [])
+      })
+    // quem marcou "Vou participar" na área do membro
+    supabase.from('confirmacoes').select('aviso_id, nome').eq('igreja_id', igreja.id).order('criado_em')
+      .then(({ data }) => {
+        const m: Record<string, string[]> = {}
+        for (const c of (data as { aviso_id: string; nome: string | null }[]) ?? []) (m[c.aviso_id] ??= []).push(c.nome ?? 'Membro')
+        setVao(m)
       })
   }
   useEffect(carregar, [igreja?.id])
@@ -326,16 +334,22 @@ function Avisos() {
         <h2>Próximos</h2>
         {atuais.length === 0 && <p className="vazio">Nenhum aviso ou evento. Cadastre a Santa Ceia, um congresso, um aviso pro boletim...</p>}
         <ul className="lista plana">
-          {atuais.map((a) => <LinhaAviso key={a.id} a={a} abrir={() => setEditando(a)} />)}
+          {atuais.map((a) => <LinhaAviso key={a.id} a={a} vao={vao[a.id]?.length ?? 0} abrir={() => setEditando(a)} />)}
         </ul>
       </section>
       {passados.length > 0 && (
         <details className="painel">
           <summary><h2>Já passaram ({passados.length})</h2></summary>
-          <ul className="lista plana">{passados.map((a) => <LinhaAviso key={a.id} a={a} abrir={() => setEditando(a)} />)}</ul>
+          <ul className="lista plana">{passados.map((a) => <LinhaAviso key={a.id} a={a} vao={vao[a.id]?.length ?? 0} abrir={() => setEditando(a)} />)}</ul>
         </details>
       )}
       <Folha titulo={editando === 'novo' ? 'Novo aviso ou evento' : 'Aviso ou evento'} aberta={!!editando} fechar={() => setEditando(null)}>
+        {editando && editando !== 'novo' && (vao[editando.id]?.length ?? 0) > 0 && (
+          <div className="cartao quem-vai">
+            <strong>{vao[editando.id].length === 1 ? '1 pessoa vai' : `${vao[editando.id].length} pessoas vão`}</strong>
+            <span>{vao[editando.id].join(', ')}</span>
+          </div>
+        )}
         {editando && <FormAviso inicial={editando === 'novo' ? null : editando} igrejaId={igreja!.id} userId={userId!}
           pronto={() => { setEditando(null); carregar() }} />}
       </Folha>
@@ -343,7 +357,7 @@ function Avisos() {
   )
 }
 
-function LinhaAviso({ a, abrir }: { a: Aviso; abrir: () => void }) {
+function LinhaAviso({ a, abrir, vao = 0 }: { a: Aviso; abrir: () => void; vao?: number }) {
   return (
     <li>
       <button className="item" onClick={abrir}>
@@ -351,6 +365,7 @@ function LinhaAviso({ a, abrir }: { a: Aviso; abrir: () => void }) {
         <div className="item-texto">
           <strong>{a.titulo}</strong>
           <span>{[a.tipo === 'aviso' ? 'Aviso' : 'Evento', a.hora, a.local, a.texto].filter(Boolean).join(' · ')}</span>
+          {vao > 0 && <small className="confirmados">{vao === 1 ? '1 pessoa vai' : `${vao} pessoas vão`}</small>}
         </div>
       </button>
     </li>

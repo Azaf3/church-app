@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
-import type { Compromisso, Pessoa } from '../lib/tipos'
-import { dataBR, dinheiro, fimDia, hojeISO, horaBR, inicioDia, mesDia, podeFinanceiro, primeiroNome, situacaoPrazo } from '../lib/util'
+import type { Compromisso, Pedido, Pessoa } from '../lib/tipos'
+import { dataBR, dinheiro, fimDia, hojeISO, horaBR, inicioDia, mesDia, podeFinanceiro, podePedidos, primeiroNome, situacaoPrazo } from '../lib/util'
 import BotaoWhats from '../componentes/BotaoWhats'
 import Contador from '../componentes/Contador'
 import Icone from '../componentes/Icone'
@@ -21,6 +21,7 @@ export default function Hoje() {
   const [contagem, setContagem] = useState({ membros: 0, visitantes: 0, novosMes: 0 })
   const [entradasMes, setEntradasMes] = useState<number | null>(null)
   const [pronto, setPronto] = useState(false)
+  const [pedidosNovos, setPedidosNovos] = useState<Pedido[]>([])
 
   const eu = equipe.find((e) => e.user_id === userId)
   const fin = podeFinanceiro(papel)
@@ -35,6 +36,12 @@ export default function Hoje() {
     setSemFicha(true)
     await supabase.auth.updateUser({ data: { sem_ficha: true } })
   }
+
+  useEffect(() => {
+    if (!igreja || !podePedidos(papel)) return
+    supabase.from('pedidos').select('*').eq('igreja_id', igreja.id).eq('status', 'aberto').order('criado_em', { ascending: false })
+      .then(({ data }) => setPedidosNovos((data as Pedido[]) ?? []))
+  }, [igreja?.id, papel])
 
   useEffect(() => {
     if (!igreja) return
@@ -152,6 +159,28 @@ export default function Hoje() {
 
       <div className="quadro-hoje">
         <div className="qh-col">
+        {pedidosNovos.length > 0 && (
+          <section className="painel">
+            <div className="lista-topo">
+              <h2>Pedidos dos membros</h2>
+              <Link className="link" to="/pedidos">Ver todos</Link>
+            </div>
+            <ul className="lista plana">
+              {pedidosNovos.slice(0, 4).map((x) => (
+                <li key={x.id}>
+                  <Link to="/pedidos" className="item">
+                    <span className="ic-redondo pequeno"><Icone nome={x.tipo === 'oracao' ? 'coracao' : 'conversa'} tam={17} /></span>
+                    <div className="item-texto">
+                      <strong>{x.nome ?? 'Membro'}</strong>
+                      <span>{x.tipo === 'oracao' ? 'Pediu oração' : x.tipo === 'visita' ? 'Quer uma visita' : 'Quer conversar'}{x.texto ? ` · ${x.texto}` : ''}</span>
+                    </div>
+                    <Icone nome="seta" tam={18} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         {minhas.length > 0 && (
           <section className="painel">
             <h2>Pra você cuidar</h2>

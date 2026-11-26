@@ -141,3 +141,23 @@ export interface Aviso {
   local: string | null
   ate: string | null
 }
+
+// pedido de um membro: oração (só pros pastores ou no mural da igreja) ou visita/conversa com o pastor
+export interface Pedido {
+  id: string
+  igreja_id: string
+  user_id: string
+  pessoa_id: string | null
+  nome: string | null
+  tipo: 'oracao' | 'visita' | 'conversa'
+  texto: string | null
+  publico: boolean
+  quando: string | null
+  status: 'aberto' | 'orando' | 'agendado' | 'respondido' | 'feito'
+  resposta: string | null
+  atendido_por: string | null
+  marcado_para: string | null
+  agenda_id: string | null
+  criado_em: string
+  atualizado_em: string
+}
