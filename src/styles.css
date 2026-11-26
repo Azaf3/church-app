@@ -1075,7 +1075,7 @@ a.numero:hover .ic-redondo { transform: scale(1.12) rotate(-6deg); }
 
   /* a página entra em cascata, bloco por bloco */
   .pagina > *, .pagina > * > .numeros > *, .pagina > * > .cartoes-par > *, .pagina > .cartoes-hoje > *, .pagina > * > .cartoes-hoje > * {
-    animation: surgir .5s cubic-bezier(.2, .75, .25, 1) both;
+    animation: surgir .5s cubic-bezier(.2, .75, .25, 1) backwards;
   }
   .pagina > *:nth-child(2) { animation-delay: .04s; } .pagina > *:nth-child(3) { animation-delay: .08s; }
   .pagina > *:nth-child(4) { animation-delay: .12s; } .pagina > *:nth-child(5) { animation-delay: .16s; }
@@ -1087,7 +1087,7 @@ a.numero:hover .ic-redondo { transform: scale(1.12) rotate(-6deg); }
   .cartoes-hoje > *:nth-child(3) { animation-delay: .36s !important; }
 
   /* gráficos crescem */
-  .gm-barras i, .ga-pilha, .ga-sai { transform-origin: bottom; animation: crescerY .8s cubic-bezier(.2, .8, .2, 1) both; }
+  .gm-barras i, .ga-pilha, .ga-sai { transform-origin: bottom; animation: crescerY .8s cubic-bezier(.2, .8, .2, 1) backwards; }
   .gm-mes:nth-child(1) i { animation-delay: .25s; } .gm-mes:nth-child(2) i { animation-delay: .3s; }
   .gm-mes:nth-child(3) i { animation-delay: .35s; } .gm-mes:nth-child(4) i { animation-delay: .4s; }
   .gm-mes:nth-child(5) i { animation-delay: .45s; } .gm-mes:nth-child(6) i { animation-delay: .5s; }
@@ -1096,18 +1096,18 @@ a.numero:hover .ic-redondo { transform: scale(1.12) rotate(-6deg); }
   .ga-mes:nth-child(n+4) .ga-pilha, .ga-mes:nth-child(n+4) .ga-sai { animation-delay: .3s; }
   .ga-mes:nth-child(n+7) .ga-pilha, .ga-mes:nth-child(n+7) .ga-sai { animation-delay: .4s; }
   .ga-mes:nth-child(n+10) .ga-pilha, .ga-mes:nth-child(n+10) .ga-sai { animation-delay: .5s; }
-  .barra-linha i b { display: block; transform-origin: left; animation: crescerX .9s .35s cubic-bezier(.2, .8, .2, 1) both; }
+  .barra-linha i b { display: block; transform-origin: left; animation: crescerX .9s .35s cubic-bezier(.2, .8, .2, 1) backwards; }
 
   /* listas: os primeiros itens entram em sequência */
-  .lista > li { animation: surgir .4s cubic-bezier(.2, .75, .25, 1) both; }
+  .lista > li { animation: surgir .4s cubic-bezier(.2, .75, .25, 1) backwards; }
   .lista > li:nth-child(2) { animation-delay: .03s; } .lista > li:nth-child(3) { animation-delay: .06s; }
   .lista > li:nth-child(4) { animation-delay: .09s; } .lista > li:nth-child(5) { animation-delay: .12s; }
   .lista > li:nth-child(6) { animation-delay: .15s; } .lista > li:nth-child(n+7) { animation-delay: .18s; }
 
   /* janelas e destaques */
-  .folha-fundo { animation: aparecer .2s ease both; }
-  .item.hoje .dia, .aba.ativa svg { animation: pulsar .6s .4s ease-out 1 both; }
-  .tabela-livro tbody tr { animation: aparecer .35s .15s ease both; }
+  .folha-fundo { animation: aparecer .2s ease backwards; }
+  .item.hoje .dia, .aba.ativa svg { animation: pulsar .6s .4s ease-out 1 backwards; }
+  .tabela-livro tbody tr { animation: aparecer .35s .15s ease backwards; }
 }
 /* cartões colados numa faixa: em vez de levantar, acendem */
 .numeros a.numero:hover { transform: none; box-shadow: none; background: #f3f8f0; }
@@ -1151,3 +1151,5 @@ body.fv-pausa .fv-onda, body.fv-pausa .fv-luz, body.fv-pausa .fv-brilho { animat
 @media print { .fundo-vivo { display: none; } }
 .app, .entrada { isolation: isolate; }
 .ou::before, .ou::after { background: rgba(20, 61, 50, .16); }
+@media (max-width: 699px) { .lista-topo { flex-wrap: wrap; } .acoes-livro { flex-wrap: wrap; } }
+.pagina { min-width: 0; }
