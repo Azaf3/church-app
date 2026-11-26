@@ -7,6 +7,7 @@ import type { Contribuinte, Fechamento, Lancamento, Pessoa } from '../lib/tipos'
 import { MESES, dataBR, dinheiro, hojeISO, podeFinanceiro } from '../lib/util'
 import { ENTRADAS, ORIGENS, origemDe, type Origem, FORMAS, FUNDOS, NOMES_CATEGORIAS, OUTRAS, adivinharCategoria, ehEntrada, ehSaida, ehSaldoInicial, mesCurto, mesesAte, somar, type Fundo } from '../lib/tesouraria'
 import Folha from '../componentes/Folha'
+import Contador from '../componentes/Contador'
 import Icone from '../componentes/Icone'
 import TesAbas from '../componentes/TesAbas'
 import DespesasFixas from '../componentes/DespesasFixas'
@@ -214,25 +215,25 @@ export default function Financeiro() {
             <div className="numero saldo-caixa com-icone">
               <i className="ic-redondo"><Icone nome="carteira" tam={22} /></i>
               <span>{visao === 'tudo' ? 'Saldo em caixa' : `Saldo · ${FUNDOS[visao]}`}</span>
-              <strong className="valor">{dinheiro(contas.saldo)}</strong>
+              <strong className="valor"><Contador valor={contas.saldo} formato={dinheiro} /></strong>
               <small>tudo que entrou menos tudo que saiu até {MESES[m - 1].toLowerCase()}</small>
             </div>
             <div className="numero com-icone">
               <i className="ic-redondo"><Icone nome="seta_cima" tam={20} /></i>
               <span>Entradas do mês</span>
-              <strong className="valor pos">{dinheiro(contas.totEnt)}</strong>
+              <strong className="valor pos"><Contador valor={contas.totEnt} formato={dinheiro} /></strong>
               <small>dízimos {dinheiro(contas.porTipo[0].v)} · ofertas {dinheiro(contas.porTipo[1].v)}{contas.porTipo[3].v > 0 ? ` · SETE ${dinheiro(contas.porTipo[3].v)}` : ''}{contas.porTipo[2].v > 0 ? ` · outras ${dinheiro(contas.porTipo[2].v)}` : ''}</small>
             </div>
             <div className="numero com-icone">
               <i className="ic-redondo neg"><Icone nome="seta_baixo" tam={20} /></i>
               <span>Saídas do mês</span>
-              <strong className="valor neg">{dinheiro(contas.totSai)}</strong>
+              <strong className="valor neg"><Contador valor={contas.totSai} formato={dinheiro} /></strong>
               <small>{contas.sai.length} {contas.sai.length === 1 ? "lançamento" : "lançamentos"}</small>
             </div>
             <div className="numero com-icone">
               <i className="ic-redondo"><Icone nome="calculadora" tam={20} /></i>
               <span>Resultado do mês</span>
-              <strong className={'valor ' + (resultado >= 0 ? 'pos' : 'neg')}>{(resultado >= 0 ? '+' : '−') + '\u00a0' + dinheiro(Math.abs(resultado))}</strong>
+              <strong className={'valor ' + (resultado >= 0 ? 'pos' : 'neg')}><Contador valor={resultado} formato={(v) => (v >= 0 ? '+' : '−') + '\u00a0' + dinheiro(Math.abs(v))} /></strong>
               <small>{resultado >= 0 ? 'sobrou' : 'gastou mais do que entrou'}</small>
             </div>
           </div>

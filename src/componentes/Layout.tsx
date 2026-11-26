@@ -1,5 +1,5 @@
 import FaixaDemo from './FaixaDemo'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useSessao } from '../lib/sessao'
 import { PAPEIS, podeEquipe, podeFinanceiro, podeSecretaria, primeiroNome } from '../lib/util'
 import Icone from './Icone'
@@ -16,6 +16,7 @@ const abas = [
 
 export default function Layout() {
   const { igreja, papel, equipe, userId, sair } = useSessao()
+  const { pathname } = useLocation()
   const eu = equipe.find((e) => e.user_id === userId)
 
   // computador: menu lateral completo
@@ -81,7 +82,8 @@ export default function Layout() {
       </header>
 
       <main className="conteudo">
-        <Outlet />
+        {/* a chave faz a página nova "surgir" a cada troca de tela */}
+        <div className="pagina" key={pathname}><Outlet /></div>
       </main>
 
       <nav className="abas">

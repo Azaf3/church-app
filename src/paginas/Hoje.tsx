@@ -5,6 +5,7 @@ import { useSessao } from '../lib/sessao'
 import type { Compromisso, Pessoa } from '../lib/tipos'
 import { dataBR, dinheiro, fimDia, hojeISO, horaBR, inicioDia, mesDia, podeFinanceiro, primeiroNome, situacaoPrazo } from '../lib/util'
 import BotaoWhats from '../componentes/BotaoWhats'
+import Contador from '../componentes/Contador'
 import Icone from '../componentes/Icone'
 
 function saudacao() {
@@ -124,26 +125,26 @@ export default function Hoje() {
         <Link to="/pessoas" className="numero com-icone">
           <i className="ic-redondo"><Icone nome="pessoas" tam={20} /></i>
           <span>Membros</span>
-          <strong>{contagem.membros}</strong>
+          <strong><Contador valor={contagem.membros} /></strong>
           <small>{contagem.novosMes > 0 && contagem.novosMes < contagem.membros ? `+${contagem.novosMes} novos este mês` : 'ativos na igreja'}</small>
         </Link>
         <Link to="/jornada" className="numero com-icone">
           <i className="ic-redondo"><Icone nome="jornada" tam={20} /></i>
           <span>Visitantes</span>
-          <strong>{contagem.visitantes}</strong>
+          <strong><Contador valor={contagem.visitantes} /></strong>
           <small>em acompanhamento</small>
         </Link>
         <Link to="/aniversariantes" className="numero com-icone">
           <i className="ic-redondo"><Icone nome="bolo" tam={20} /></i>
           <span>Aniversários</span>
-          <strong>{aniversarios.length}</strong>
+          <strong><Contador valor={aniversarios.length} /></strong>
           <small>nos próximos 7 dias</small>
         </Link>
         {fin && (
           <Link to="/financeiro" className="numero com-icone">
           <i className="ic-redondo"><Icone nome="dinheiro" tam={20} /></i>
             <span>Entradas do mês</span>
-            <strong className="valor">{dinheiro(entradasMes ?? 0)}</strong>
+            <strong className="valor"><Contador valor={entradasMes ?? 0} formato={dinheiro} /></strong>
             <small>dízimos e ofertas</small>
           </Link>
         )}

@@ -1053,3 +1053,61 @@ body {
 .acoes-campanha { display: flex; gap: 6px; align-items: center; margin-left: 12px; flex-wrap: wrap; justify-content: flex-end; }
 .acoes-campanha .btn-perigo { background: #b4412f; color: #fff; border-color: #b4412f; }
 @media (max-width: 699px) { .lista .item:has(.acoes-campanha) { flex-wrap: wrap; } .acoes-campanha { width: 100%; margin: 6px 0 0; } }
+
+/* ---------- vida: movimento ---------- */
+/* toque e passar o mouse: sempre (são respostas à pessoa), mas curtinhos */
+.btn, .btn-icone, .lateral a, .aba, .caixa-aba, .gm-mes, a.numero, button.campanha, .atalho, .atalho-sete, .seg button, .meses-ano button {
+  transition: transform .16s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+.btn:active, .btn-icone:active, .seg button:active, .meses-ano button:active { transform: scale(.96); }
+a.numero:hover, button.campanha:hover, .atalho:hover, .atalho-sete:hover { transform: translateY(-3px); box-shadow: 0 14px 30px -14px rgba(31, 74, 45, .35); }
+a.numero .ic-redondo, button.campanha h2 { transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
+a.numero:hover .ic-redondo { transform: scale(1.12) rotate(-6deg); }
+.lateral a:hover:not(.ativo):not(.active) { transform: translateX(3px); }
+.gm-mes:hover .gm-barras i { filter: brightness(1.08); }
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes surgir { from { opacity: 0; transform: translateY(12px); } }
+  @keyframes aparecer { from { opacity: 0; } }
+  @keyframes crescerY { from { transform: scaleY(0); } }
+  @keyframes crescerX { from { transform: scaleX(0); } }
+  @keyframes pulsar { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+
+  /* a página entra em cascata, bloco por bloco */
+  .pagina > *, .pagina > * > .numeros > *, .pagina > * > .cartoes-par > *, .pagina > .cartoes-hoje > *, .pagina > * > .cartoes-hoje > * {
+    animation: surgir .5s cubic-bezier(.2, .75, .25, 1) both;
+  }
+  .pagina > *:nth-child(2) { animation-delay: .04s; } .pagina > *:nth-child(3) { animation-delay: .08s; }
+  .pagina > *:nth-child(4) { animation-delay: .12s; } .pagina > *:nth-child(5) { animation-delay: .16s; }
+  .pagina > *:nth-child(6) { animation-delay: .2s; } .pagina > *:nth-child(n+7) { animation-delay: .24s; }
+  .numeros > *:nth-child(1) { animation-delay: .08s !important; } .numeros > *:nth-child(2) { animation-delay: .14s !important; }
+  .numeros > *:nth-child(3) { animation-delay: .2s !important; } .numeros > *:nth-child(4) { animation-delay: .26s !important; }
+  .numeros > *:nth-child(5) { animation-delay: .32s !important; }
+  .cartoes-par > *:nth-child(2), .cartoes-hoje > *:nth-child(2) { animation-delay: .3s !important; }
+  .cartoes-hoje > *:nth-child(3) { animation-delay: .36s !important; }
+
+  /* gráficos crescem */
+  .gm-barras i, .ga-pilha, .ga-sai { transform-origin: bottom; animation: crescerY .8s cubic-bezier(.2, .8, .2, 1) both; }
+  .gm-mes:nth-child(1) i { animation-delay: .25s; } .gm-mes:nth-child(2) i { animation-delay: .3s; }
+  .gm-mes:nth-child(3) i { animation-delay: .35s; } .gm-mes:nth-child(4) i { animation-delay: .4s; }
+  .gm-mes:nth-child(5) i { animation-delay: .45s; } .gm-mes:nth-child(6) i { animation-delay: .5s; }
+  .gm-barras i.gm-sai { animation-duration: .9s; }
+  .ga-mes:nth-child(n) .ga-pilha, .ga-mes:nth-child(n) .ga-sai { animation-delay: .2s; }
+  .ga-mes:nth-child(n+4) .ga-pilha, .ga-mes:nth-child(n+4) .ga-sai { animation-delay: .3s; }
+  .ga-mes:nth-child(n+7) .ga-pilha, .ga-mes:nth-child(n+7) .ga-sai { animation-delay: .4s; }
+  .ga-mes:nth-child(n+10) .ga-pilha, .ga-mes:nth-child(n+10) .ga-sai { animation-delay: .5s; }
+  .barra-linha i b { display: block; transform-origin: left; animation: crescerX .9s .35s cubic-bezier(.2, .8, .2, 1) both; }
+
+  /* listas: os primeiros itens entram em sequência */
+  .lista > li { animation: surgir .4s cubic-bezier(.2, .75, .25, 1) both; }
+  .lista > li:nth-child(2) { animation-delay: .03s; } .lista > li:nth-child(3) { animation-delay: .06s; }
+  .lista > li:nth-child(4) { animation-delay: .09s; } .lista > li:nth-child(5) { animation-delay: .12s; }
+  .lista > li:nth-child(6) { animation-delay: .15s; } .lista > li:nth-child(n+7) { animation-delay: .18s; }
+
+  /* janelas e destaques */
+  .folha-fundo { animation: aparecer .2s ease both; }
+  .item.hoje .dia, .aba.ativa svg { animation: pulsar .6s .4s ease-out 1 both; }
+  .tabela-livro tbody tr { animation: aparecer .35s .15s ease both; }
+}
+/* cartões colados numa faixa: em vez de levantar, acendem */
+.numeros a.numero:hover { transform: none; box-shadow: none; background: #f3f8f0; }
