@@ -201,13 +201,14 @@ const DOCS: Record<TipoDoc, string> = { declaracao: 'Declaração de membro', re
 
 function Documentos({ pessoas }: { pessoas: Pessoa[] }) {
   const { igreja, equipe } = useSessao()
-  const pastor = equipe.find((e) => e.papel === 'pastor') ?? equipe.find((e) => e.papel === 'admin')
+  const pastor = equipe.find((e) => /pastor/i.test(e.titulo ?? '')) ?? equipe.find((e) => e.papel === 'pastor')
+    ?? equipe.find((e) => e.papel === 'admin' && !e.titulo)
   const [tipo, setTipo] = useState<TipoDoc>('declaracao')
   const [pessoaId, setPessoaId] = useState('')
   const [destino, setDestino] = useState('')
   const [finalidade, setFinalidade] = useState('')
   const [assina, setAssina] = useState(pastor?.nome ?? '')
-  const [cargo, setCargo] = useState('Pastor')
+  const [cargo, setCargo] = useState(pastor?.titulo?.trim() || 'Pastor')
   const [texto, setTexto] = useState('')
   const [editado, setEditado] = useState(false)
   const membros = pessoas.filter((p) => p.tipo === 'membro')

@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useSessao } from '../lib/sessao'
-import { PAPEIS, podeEquipe, podeFinanceiro, podeSecretaria } from '../lib/util'
+import { PAPEIS, podeEquipe, podeFinanceiro, podeSecretaria, rotuloCargo } from '../lib/util'
 import Icone from '../componentes/Icone'
 
 export default function Mais() {
-  const { papel, igrejas, igreja, trocarIgreja, sair, session } = useSessao()
+  const { papel, igrejas, igreja, trocarIgreja, sair, session, equipe, userId } = useSessao()
+  const eu = equipe.find((e) => e.user_id === userId)
 
   const itens = [
     ...(podeSecretaria(papel) ? [{ para: '/secretaria', nome: 'Secretaria', icone: 'pasta' }] : []),
@@ -42,7 +43,7 @@ export default function Mais() {
       )}
 
       <div className="conta">
-        <span>{session?.user.email}{papel && ` · ${PAPEIS[papel]}`}</span>
+        <span>{session?.user.email}{eu ? ` · ${rotuloCargo(eu)}` : papel && ` · ${PAPEIS[papel]}`}</span>
         <button className="btn" onClick={sair}><Icone nome="sair" tam={18} /> Sair</button>
       </div>
     </>

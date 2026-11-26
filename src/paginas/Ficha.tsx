@@ -2,9 +2,10 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
-import type { Contato, Pessoa } from '../lib/tipos'
-import { ETAPAS, PAPEIS, dataBR, iniciais, podeEquipe, primeiroNome, situacaoPrazo } from '../lib/util'
+import type { Contato, Convite, Pessoa } from '../lib/tipos'
+import { ETAPAS, dataBR, iniciais, podeEquipe, primeiroNome, rotuloCargo, situacaoPrazo } from '../lib/util'
 import FormAcesso from '../componentes/FormAcesso'
+import { EditarConvite } from '../componentes/EditarAcesso'
 import { formatarCpf, lerSensiveis, podeVerSensiveis, type Sensiveis } from '../lib/sensiveis'
 import Folha from '../componentes/Folha'
 import FormPessoa from '../componentes/FormPessoa'
@@ -24,6 +25,18 @@ export default function Ficha() {
   const [confirmando, setConfirmando] = useState(false)
   const [dandoAcesso, setDandoAcesso] = useState(false)
   const [sens, setSens] = useState<Sensiveis | null>(null)
+  const [convite, setConvite] = useState<Convite | null>(null)
+  const [mudandoAcesso, setMudandoAcesso] = useState(false)
+
+  // acesso já liberado pra essa pessoa, que vale quando ela entrar pela primeira vez
+  function carregarConvite() {
+    if (!igreja || !id || !podeEquipe(papel)) return
+    supabase.from('convites').select('*').eq('igreja_id', igreja.id).then(({ data }) => {
+      const email = p?.email?.trim().toLowerCase()
+      setConvite(((data as Convite[]) ?? []).find((c) => c.pessoa_id === id || (!!email && c.email.toLowerCase() === email)) ?? null)
+    })
+  }
+  useEffect(carregarConvite, [igreja?.id, id, papel, p?.email])
 
   useEffect(() => {
     supabase.from('pessoas').select('*').eq('id', id!).single().then(({ data }) => setP(data))
@@ -60,7 +73,8 @@ export default function Ficha() {
         <div>
           <h1 className="titulo">{p.nome}</h1>
           <p className="suave">{p.tipo === 'membro' ? 'Membro' : 'Visitante'}{etapa && ` · ${etapa.nome}`}</p>
-          {login && <span className="tag">{PAPEIS[login.papel]} · acessa o app</span>}
+          {login && <span className="tag">{rotuloCargo(login)} · acessa o app</span>}
+          {!login && convite && <span className="tag">{rotuloCargo(convite)} · ainda não entrou</span>}
         </div>
       </div>
 
@@ -116,7 +130,10 @@ export default function Ficha() {
       <div className="acoes rodape">
         <button className="btn" onClick={() => setEditando(true)}>Editar dados</button>
         {p.tipo === 'visitante' && <button className="btn" onClick={tornarMembro}>Tornar membro</button>}
-        {!login && podeEquipe(papel) && <button className="btn" onClick={() => setDandoAcesso(true)}>Dar acesso ao app</button>}
+        {!login && !convite && podeEquipe(papel) && <button className="btn" onClick={() => setDandoAcesso(true)}>Dar acesso ao app</button>}
+        {!login && convite && podeEquipe(papel) && (papel === 'admin' || convite.papel !== 'admin') && (
+          <button className="btn" onClick={() => setMudandoAcesso(true)}>Acesso ao app</button>
+        )}
         <button className="btn btn-perigo" onClick={() => setConfirmando(true)}>Arquivar</button>
       </div>
 
@@ -129,7 +146,12 @@ export default function Ficha() {
       </Folha>
 
       <Folha titulo={`Acesso de ${primeiroNome(p.nome)} ao app`} aberta={dandoAcesso} fechar={() => setDandoAcesso(false)}>
-        <FormAcesso pessoa={p} pronto={() => setDandoAcesso(false)} />
+        <FormAcesso pessoa={p} pronto={() => { setDandoAcesso(false); carregarConvite() }} />
+      </Folha>
+
+      <Folha titulo={`Acesso de ${primeiroNome(p.nome)} ao app`} aberta={mudandoAcesso} fechar={() => setMudandoAcesso(false)}>
+        {convite && <EditarConvite c={convite} souAdmin={papel === 'admin'} comLinkFicha={false}
+          pronto={() => { setMudandoAcesso(false); carregarConvite() }} />}
       </Folha>
 
       <Folha titulo="Editar" aberta={editando} fechar={() => setEditando(false)}>

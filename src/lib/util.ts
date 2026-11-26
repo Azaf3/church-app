@@ -19,6 +19,12 @@ export const PAPEIS: Record<Papel, string> = {
   membro: 'Membro',
 }
 
+// "Pastor · Administrador": cargo na igreja + nível de acesso (sem repetir quando é o mesmo)
+export const rotuloCargo = (m: { papel: Papel; titulo?: string | null }) => {
+  const t = m.titulo?.trim()
+  return t && t.toLowerCase() !== PAPEIS[m.papel].toLowerCase() ? `${t} · ${PAPEIS[m.papel]}` : PAPEIS[m.papel]
+}
+
 // equipe = quem cuida das pessoas; membro só vê a própria ficha
 export const ehEquipe = (p?: Papel) => !!p && p !== 'membro'
 

@@ -8,6 +8,7 @@ export interface NovoAcesso {
   senha: string
   papel: Papel
   pessoaId: string | null
+  titulo?: string | null // cargo na igreja (Pastor, Diácono…)
   google: boolean // true = entra com a conta Google, sem senha
 }
 
@@ -25,7 +26,7 @@ export async function criarAcesso(a: NovoAcesso): Promise<ResultadoAcesso> {
 
   await supabase.from('convites').delete().eq('igreja_id', a.igrejaId).eq('email', email)
   const { error: eConvite } = await supabase.from('convites').insert({
-    igreja_id: a.igrejaId, email, nome: a.nome.trim(), papel: a.papel, pessoa_id: a.pessoaId,
+    igreja_id: a.igrejaId, email, nome: a.nome.trim(), papel: a.papel, pessoa_id: a.pessoaId, titulo: a.titulo?.trim() || null,
   })
   if (eConvite) return { ok: false, erro: 'Não deu pra registrar o acesso. Só administrador e pastor podem criar logins.' }
 
@@ -46,7 +47,7 @@ export async function criarAcesso(a: NovoAcesso): Promise<ResultadoAcesso> {
   // (não depende do e-mail ser comprovado, porque foi o admin quem criou)
   if (!data.user?.id) return { ok: true, jaTinhaConta: false, pendente: true }
   const { error: eEquipe } = await supabase.from('equipe').insert({
-    igreja_id: a.igrejaId, user_id: data.user.id, nome: a.nome.trim(), papel: a.papel, pessoa_id: a.pessoaId,
+    igreja_id: a.igrejaId, user_id: data.user.id, nome: a.nome.trim(), papel: a.papel, pessoa_id: a.pessoaId, titulo: a.titulo?.trim() || null,
   })
   await supabase.from('convites').delete().eq('igreja_id', a.igrejaId).eq('email', email)
   if (data.session) await avulso.auth.signOut()

@@ -138,12 +138,12 @@ const contatos: Linha[] = [
 const db: Record<string, Linha[]> = {
   igrejas: [{ id: IG, nome: 'Igreja Cristã Esperança', cidade: 'Gama - DF', cor: '#2b6439', logo: logoDemo, criado_em: agora() }],
   equipe: [
-    { igreja_id: IG, user_id: EU, nome: 'Pr. Marcos Vieira', papel: 'admin', pessoa_id: null },
+    { igreja_id: IG, user_id: EU, nome: 'Pr. Marcos Vieira', papel: 'admin', pessoa_id: null, titulo: 'Pastor' },
     { igreja_id: IG, user_id: ANA, nome: 'Ana Souza', papel: 'obreiro', pessoa_id: null },
     { igreja_id: IG, user_id: CARLOS, nome: 'Carlos Henrique', papel: 'tesoureiro', pessoa_id: null },
     { igreja_id: IG, user_id: PAULA, nome: 'Paula Freitas', papel: 'obreiro', pessoa_id: null },
   ],
-  convites: [{ id: 'cv1', igreja_id: IG, email: 'diacono.jose@email.com', nome: 'José Diácono', papel: 'obreiro' }],
+  convites: [{ id: 'cv1', igreja_id: IG, email: 'diacono.jose@email.com', nome: 'José Diácono', papel: 'obreiro', titulo: 'Diácono', pessoa_id: null }],
   pessoas, contatos, cultos, presencas, lancamentos, agenda, contribuintes, contribuicoes, avisos,
 }
 
@@ -243,7 +243,7 @@ class Consulta {
 function aceitarConvitesDe(user: { id: string; email: string } | null) {
   if (!user) return 0
   const meus = db.convites.filter((c) => c.email === user.email.toLowerCase())
-  meus.forEach((c) => db.equipe.push({ igreja_id: c.igreja_id, user_id: user.id, nome: c.nome, papel: c.papel, pessoa_id: c.pessoa_id ?? null }))
+  meus.forEach((c) => db.equipe.push({ igreja_id: c.igreja_id, user_id: user.id, nome: c.nome, papel: c.papel, pessoa_id: c.pessoa_id ?? null, titulo: c.titulo ?? null }))
   db.convites = db.convites.filter((c) => !meus.includes(c))
   return meus.length
 }

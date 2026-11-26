@@ -9,6 +9,18 @@ export interface MembroEquipe {
   nome: string
   papel: Papel
   pessoa_id: string | null
+  titulo?: string | null // cargo na igreja (Pastor, Diácono…), separado do nível de acesso
+}
+
+// acesso já liberado pra um e-mail, que vale no primeiro login dessa pessoa
+export interface Convite {
+  id: string
+  igreja_id: string
+  email: string
+  nome: string
+  papel: Papel
+  pessoa_id: string | null
+  titulo?: string | null
 }
 
 export interface Pessoa {

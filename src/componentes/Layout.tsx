@@ -1,7 +1,7 @@
 import FaixaDemo from './FaixaDemo'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useSessao } from '../lib/sessao'
-import { PAPEIS, podeEquipe, podeFinanceiro, podeSecretaria, primeiroNome } from '../lib/util'
+import { PAPEIS, podeEquipe, podeFinanceiro, podeSecretaria, primeiroNome, rotuloCargo } from '../lib/util'
 import FundoVivo from './FundoVivo'
 import Icone from './Icone'
 import LogoIgreja from './LogoIgreja'
@@ -72,7 +72,7 @@ export default function Layout() {
           <span className="avatar pequeno">{eu ? primeiroNome(eu.nome).charAt(0) : '·'}</span>
           <div>
             <strong>{eu ? primeiroNome(eu.nome) : ''}</strong>
-            <small>{papel ? PAPEIS[papel] : ''}</small>
+            <small>{eu ? rotuloCargo(eu) : papel ? PAPEIS[papel] : ''}</small>
           </div>
           <button className="btn-icone" onClick={sair} aria-label="Sair" title="Sair"><Icone nome="sair" tam={18} /></button>
         </div>

@@ -23,6 +23,7 @@ export default function FormAcesso({ pessoa, pronto }: { pessoa?: Pessoa; pronto
   const [email, setEmail] = useState(pessoa?.email ?? '')
   const [senha, setSenha] = useState(gerarSenha)
   const [papel, setPapel] = useState<Papel>('obreiro')
+  const [titulo, setTitulo] = useState('')
   const [google, setGoogle] = useState(true)
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -46,7 +47,7 @@ export default function FormAcesso({ pessoa, pronto }: { pessoa?: Pessoa; pronto
   async function enviar(e: FormEvent) {
     e.preventDefault()
     setEnviando(true); setErro('')
-    const r = await criarAcesso({ igrejaId: igreja!.id, nome, email, senha, papel, pessoaId: pessoaId || null, google })
+    const r = await criarAcesso({ igrejaId: igreja!.id, nome, email, senha, papel, pessoaId: pessoaId || null, titulo, google })
     setEnviando(false)
     if (!r.ok) { setErro(r.erro); return }
     await recarregarEquipe()
@@ -98,6 +99,9 @@ export default function FormAcesso({ pessoa, pronto }: { pessoa?: Pessoa; pronto
         </label>
       )}
       <label>Nome<input required value={nome} onChange={(e) => setNome(e.target.value)} /></label>
+      <label>Cargo na igreja
+        <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Opcional. Ex.: Pastor, Diácono, Missionária" />
+      </label>
       <div className="seg">
         <button type="button" className={google ? 'ativo' : ''} onClick={() => setGoogle(true)}>Entra com Google</button>
         <button type="button" className={!google ? 'ativo' : ''} onClick={() => setGoogle(false)}>E-mail e senha</button>
@@ -117,7 +121,7 @@ export default function FormAcesso({ pessoa, pronto }: { pessoa?: Pessoa; pronto
         )}
 
       <fieldset className="funcoes">
-        <legend>Função</legend>
+        <legend>Acesso no app</legend>
         {FUNCOES.map((f) => (
           <label key={f.id} className={'funcao' + (papel === f.id ? ' ativa' : '')}>
             <input type="radio" name="papel" checked={papel === f.id} onChange={() => setPapel(f.id)} />

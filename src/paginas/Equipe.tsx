@@ -1,35 +1,81 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
-import type { MembroEquipe, Papel } from '../lib/tipos'
-import { PAPEIS, iniciais, podeEquipe } from '../lib/util'
+import type { Convite, MembroEquipe, Papel } from '../lib/tipos'
+import { iniciais, podeEquipe, rotuloCargo } from '../lib/util'
 import Folha from '../componentes/Folha'
-import FormAcesso, { FUNCOES } from '../componentes/FormAcesso'
+import FormAcesso from '../componentes/FormAcesso'
+import { EditarConvite, EditarMembro } from '../componentes/EditarAcesso'
 import Icone from '../componentes/Icone'
 
-interface Convite { id: string; email: string; nome: string; papel: Papel }
+// ordem da lista: quem tem mais responsabilidade primeiro
+const ORDEM: Record<Papel, number> = { admin: 0, pastor: 1, secretario: 2, tesoureiro: 3, obreiro: 4, membro: 5 }
+
+type Linha = { tipo: 'membro'; m: MembroEquipe } | { tipo: 'convite'; c: Convite }
 
 export default function Equipe() {
   const { igreja, equipe, papel, userId, recarregarEquipe } = useSessao()
   const [convites, setConvites] = useState<Convite[]>([])
   const [criando, setCriando] = useState(false)
   const [editando, setEditando] = useState<MembroEquipe | null>(null)
+  const [editandoConvite, setEditandoConvite] = useState<Convite | null>(null)
   const gestor = podeEquipe(papel)
+  const souAdmin = papel === 'admin'
 
   function carregarConvites() {
     if (!igreja || !gestor) return
-    supabase.from('convites').select('*').eq('igreja_id', igreja.id).then(({ data }) => setConvites(data ?? []))
+    supabase.from('convites').select('*').eq('igreja_id', igreja.id).then(({ data }) => setConvites((data as Convite[]) ?? []))
   }
   useEffect(carregarConvites, [igreja?.id, gestor])
 
-  async function cancelar(id: string) {
-    await supabase.from('convites').delete().eq('id', id)
-    setConvites(convites.filter((c) => c.id !== id))
-  }
-
   // pastor não mexe em administrador; ninguém mexe em si mesmo
-  const podeEditar = (m: MembroEquipe) => gestor && m.user_id !== userId && (papel === 'admin' || m.papel !== 'admin')
+  const podeEditar = (m: MembroEquipe) => gestor && m.user_id !== userId && (souAdmin || m.papel !== 'admin')
+  const podeEditarConvite = (c: Convite) => gestor && (souAdmin || c.papel !== 'admin')
+
+  // quem ainda não entrou aparece junto, com o cargo que já vai ter
+  const comCargo: Linha[] = [
+    ...equipe.filter((m) => m.papel !== 'membro').map((m) => ({ tipo: 'membro' as const, m })),
+    ...convites.filter((c) => c.papel !== 'membro').map((c) => ({ tipo: 'convite' as const, c })),
+  ].sort((a, b) => {
+    const pa = a.tipo === 'membro' ? a.m : a.c, pb = b.tipo === 'membro' ? b.m : b.c
+    return ORDEM[pa.papel] - ORDEM[pb.papel] || pa.nome.localeCompare(pb.nome)
+  })
+  const membros: Linha[] = [
+    ...equipe.filter((m) => m.papel === 'membro').map((m) => ({ tipo: 'membro' as const, m })),
+    ...convites.filter((c) => c.papel === 'membro').map((c) => ({ tipo: 'convite' as const, c })),
+  ]
+
+  // função (não componente) pra lista não remontar a cada atualização
+  function item(l: Linha) {
+    if (l.tipo === 'membro') {
+      const { m } = l
+      return (
+        <li key={m.user_id}>
+          <button className="item" onClick={() => podeEditar(m) && setEditando(m)} disabled={!podeEditar(m)}>
+            <span className="avatar">{iniciais(m.nome)}</span>
+            <div className="item-texto">
+              <strong>{m.nome}{m.user_id === userId && ' (você)'}</strong>
+              <span>{rotuloCargo(m)}{m.papel !== 'membro' && m.pessoa_id && ' · com ficha de membro'}</span>
+            </div>
+            {podeEditar(m) && <Icone nome="seta" tam={18} />}
+          </button>
+        </li>
+      )
+    }
+    const { c } = l
+    return (
+      <li key={c.id}>
+        <button className="item" onClick={() => podeEditarConvite(c) && setEditandoConvite(c)} disabled={!podeEditarConvite(c)}>
+          <span className="avatar">{iniciais(c.nome)}</span>
+          <div className="item-texto">
+            <strong>{c.nome}</strong>
+            <span>{rotuloCargo(c)}{c.pessoa_id && ' · com ficha de membro'}<em className="tag tag-linha" title={`Entra com o Google: ${c.email}`}>ainda não entrou</em></span>
+          </div>
+          {podeEditarConvite(c) && <Icone nome="seta" tam={18} />}
+        </button>
+      </li>
+    )
+  }
 
   return (
     <>
@@ -41,50 +87,14 @@ export default function Equipe() {
 
       <h2 className="secao">Com cargo</h2>
       <ul className="lista">
-        {equipe.filter((m) => m.papel !== 'membro').map((m) => (
-          <li key={m.user_id}>
-            <button className="item" onClick={() => podeEditar(m) && setEditando(m)} disabled={!podeEditar(m)}>
-              <span className="avatar">{iniciais(m.nome)}</span>
-              <div className="item-texto">
-                <strong>{m.nome}{m.user_id === userId && ' (você)'}</strong>
-                <span>{PAPEIS[m.papel]}{m.papel !== 'membro' && m.pessoa_id && ' · com ficha de membro'}</span>
-              </div>
-              {podeEditar(m) && <Icone nome="seta" tam={18} />}
-            </button>
-          </li>
-        ))}
+        {comCargo.map(item)}
       </ul>
 
-      {equipe.some((m) => m.papel === 'membro') && (
+      {membros.length > 0 && (
         <>
-          <h2 className="secao">Membros com acesso ({equipe.filter((m) => m.papel === 'membro').length})</h2>
-      <ul className="lista">
-            {equipe.filter((m) => m.papel === 'membro').map((m) => (
-              <li key={m.user_id}>
-                <button className="item" onClick={() => podeEditar(m) && setEditando(m)} disabled={!podeEditar(m)}>
-                  <span className="avatar">{iniciais(m.nome)}</span>
-                  <div className="item-texto">
-                    <strong>{m.nome}{m.user_id === userId && ' (você)'}</strong>
-                    <span>{PAPEIS[m.papel]}{m.papel !== 'membro' && m.pessoa_id && ' · com ficha de membro'}</span>
-                  </div>
-                  {podeEditar(m) && <Icone nome="seta" tam={18} />}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-
-      {convites.length > 0 && (
-        <>
-          <h2 className="secao">Aguardando primeiro acesso</h2>
+          <h2 className="secao">Membros com acesso ({membros.length})</h2>
           <ul className="lista">
-            {convites.map((c) => (
-              <li key={c.id} className="item">
-                <div className="item-texto"><strong>{c.nome}</strong><span>{c.email} · {PAPEIS[c.papel]}</span></div>
-                <button className="btn btn-mini" onClick={() => cancelar(c.id)}>Cancelar</button>
-              </li>
-            ))}
+            {membros.map(item)}
           </ul>
         </>
       )}
@@ -94,56 +104,14 @@ export default function Equipe() {
       </Folha>
 
       <Folha titulo={editando?.nome ?? ''} aberta={!!editando} fechar={() => setEditando(null)}>
-        {editando && <EditarMembro m={editando} souAdmin={papel === 'admin'}
+        {editando && <EditarMembro m={editando} souAdmin={souAdmin}
           pronto={async () => { setEditando(null); await recarregarEquipe() }} />}
       </Folha>
+
+      <Folha titulo={editandoConvite?.nome ?? ''} aberta={!!editandoConvite} fechar={() => setEditandoConvite(null)}>
+        {editandoConvite && <EditarConvite c={editandoConvite} souAdmin={souAdmin}
+          pronto={() => { setEditandoConvite(null); carregarConvites() }} />}
+      </Folha>
     </>
-  )
-}
-
-function EditarMembro({ m, souAdmin, pronto }: { m: MembroEquipe; souAdmin: boolean; pronto: () => void }) {
-  const [papel, setPapel] = useState<Papel>(m.papel)
-  const [confirmar, setConfirmar] = useState(false)
-  const [erro, setErro] = useState('')
-
-  async function salvar() {
-    const { error } = await supabase.from('equipe').update({ papel })
-      .eq('igreja_id', m.igreja_id).eq('user_id', m.user_id)
-    if (error) { setErro('Não deu pra salvar.'); return }
-    pronto()
-  }
-
-  async function remover() {
-    const { error } = await supabase.from('equipe').delete().eq('igreja_id', m.igreja_id).eq('user_id', m.user_id)
-    if (error) { setErro('Não deu pra remover.'); return }
-    pronto()
-  }
-
-  return (
-    <div className="form">
-      <fieldset className="funcoes">
-        <legend>Função</legend>
-        {FUNCOES.filter((f) => souAdmin || f.id !== 'admin').map((f) => (
-          <label key={f.id} className={'funcao' + (papel === f.id ? ' ativa' : '')}>
-            <input type="radio" name="papel-edit" checked={papel === f.id} onChange={() => setPapel(f.id)} />
-            <span><strong>{f.nome}</strong><small>{f.desc}</small></span>
-          </label>
-        ))}
-      </fieldset>
-      {erro && <p className="erro">{erro}</p>}
-      <button className="btn btn-primario" onClick={salvar} disabled={papel === m.papel}>Salvar função</button>
-      {m.pessoa_id && <Link className="btn" to={`/pessoas/${m.pessoa_id}`}>Ver ficha de membro</Link>}
-      {!confirmar
-        ? <button className="btn btn-perigo" onClick={() => setConfirmar(true)}>Tirar acesso ao app</button>
-        : (
-          <div className="cartao">
-            <span>{m.nome} não vai mais conseguir entrar nesta igreja. A ficha de membro continua.</span>
-            <div className="acoes">
-              <button className="btn btn-perigo" onClick={remover}>Sim, tirar acesso</button>
-              <button className="btn" onClick={() => setConfirmar(false)}>Cancelar</button>
-            </div>
-          </div>
-        )}
-    </div>
   )
 }
