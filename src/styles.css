@@ -1050,3 +1050,6 @@ body {
   .tesouraria .numeros .numero.com-icone strong { font-size: clamp(20px, 2.4vw, 28px); }
 }
 @media (min-width: 1280px) { .tesouraria .numeros .numero.com-icone strong { font-size: clamp(20px, 1.75vw, 28px); } }
+.acoes-campanha { display: flex; gap: 6px; align-items: center; margin-left: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.acoes-campanha .btn-perigo { background: #b4412f; color: #fff; border-color: #b4412f; }
+@media (max-width: 699px) { .lista .item:has(.acoes-campanha) { flex-wrap: wrap; } .acoes-campanha { width: 100%; margin: 6px 0 0; } }

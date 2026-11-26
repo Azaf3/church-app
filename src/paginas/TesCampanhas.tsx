@@ -13,6 +13,21 @@ export default function TesCampanhas() {
   const { igreja, papel } = useSessao()
   const [todos, setTodos] = useState<Lancamento[] | null>(null)
   const [aberta, setAberta] = useState<string | null>(null)
+  const [confirmar, setConfirmar] = useState<string | null>(null)
+  const [erro, setErro] = useState('')
+
+  async function excluir(l: Lancamento) {
+    setErro('')
+    const { error } = await supabase.from('lancamentos').delete().eq('id', l.id)
+    if (error) return setErro('Não deu pra excluir: ' + error.message)
+    setTodos((t) => (t ?? []).filter((x) => x.id !== l.id)); setConfirmar(null)
+  }
+  async function tirarDaCampanha(l: Lancamento) {
+    setErro('')
+    const { error } = await supabase.from('lancamentos').update({ campanha: null }).eq('id', l.id)
+    if (error) return setErro('Não deu pra tirar da campanha: ' + error.message)
+    setTodos((t) => (t ?? []).map((x) => (x.id === l.id ? { ...x, campanha: null } : x)))
+  }
 
   useEffect(() => {
     if (!igreja || !podeFinanceiro(papel)) return
@@ -74,12 +89,27 @@ export default function TesCampanhas() {
       {atual && (
         <section className="painel">
           <h2>Lançamentos · {atual.nome}</h2>
+          {erro && <p className="erro">{erro}</p>}
           <ul className="lista plana">
             {atual.ls.map((l) => (
               <li key={l.id} className="item">
                 <span className="hora">{dataBR(l.data)}</span>
                 <div className="item-texto"><strong>{l.descricao || l.nome || (ehSaida(l) ? l.categoria : 'Entrada') || '—'}</strong></div>
                 <strong className={'valor ' + (ehSaida(l) ? 'neg' : 'pos')}>{ehSaida(l) ? '−' : '+'} {dinheiro(Number(l.valor))}</strong>
+                <div className="acoes-campanha sem-impressao">
+                  {confirmar === l.id ? (
+                    <>
+                      <span className="suave">Excluir de vez?</span>
+                      <button className="btn btn-mini btn-perigo" onClick={() => excluir(l)}>Sim, excluir</button>
+                      <button className="btn btn-mini" onClick={() => setConfirmar(null)}>Cancelar</button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="btn btn-mini" onClick={() => tirarDaCampanha(l)} title="O lançamento continua no caixa, só sai desta campanha">Tirar da campanha</button>
+                      <button className="btn btn-mini btn-saida" onClick={() => setConfirmar(l.id)}>Excluir</button>
+                    </>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
