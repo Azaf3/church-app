@@ -1043,3 +1043,10 @@ body {
 }
 
 .aviso-linha { color: #a5631a; background: #fdf3e4; border-radius: 6px; padding: 1px 6px; font-size: 12px; }
+.numero strong.valor, .numeros .numero strong { white-space: nowrap; letter-spacing: -0.01em; }
+.numeros .numero.com-icone strong { font-size: clamp(18px, 2.2vw, 28px); }
+@media (min-width: 700px) and (max-width: 1279px) {
+  .tesouraria .numeros:not(.cinco) { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tesouraria .numeros .numero.com-icone strong { font-size: clamp(20px, 2.4vw, 28px); }
+}
+@media (min-width: 1280px) { .tesouraria .numeros .numero.com-icone strong { font-size: clamp(20px, 1.75vw, 28px); } }

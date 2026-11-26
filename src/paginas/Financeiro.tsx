@@ -229,7 +229,7 @@ export default function Financeiro() {
             <div className="numero com-icone">
               <i className="ic-redondo"><Icone nome="calculadora" tam={20} /></i>
               <span>Resultado do mês</span>
-              <strong className={'valor ' + (resultado >= 0 ? 'pos' : 'neg')}>{resultado >= 0 ? '+' : '−'} {dinheiro(Math.abs(resultado))}</strong>
+              <strong className={'valor ' + (resultado >= 0 ? 'pos' : 'neg')}>{(resultado >= 0 ? '+' : '−') + '\u00a0' + dinheiro(Math.abs(resultado))}</strong>
               <small>{resultado >= 0 ? 'sobrou' : 'gastou mais do que entrou'}</small>
             </div>
           </div>
