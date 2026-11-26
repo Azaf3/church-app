@@ -127,9 +127,11 @@ function Visitantes({ pessoas, mudou }: { pessoas: Pessoa[]; mudou: () => void }
                 <span className="hora">{p.primeira_visita ? dataBR(p.primeira_visita) : dataBR(p.criado_em)}</span>
                 <div className="item-texto">
                   <strong>{p.nome}</strong>
-                  <span>{[p.como_conheceu, p.convidado_por && `por ${p.convidado_por}`].filter(Boolean).join(' ') || 'sem detalhes'}</span>
+                  <span>
+                    {[p.como_conheceu, p.convidado_por && `por ${p.convidado_por}`].filter(Boolean).join(' ') || 'sem detalhes'}
+                    {p.etapa && <em className="tag tag-linha">{ETAPAS.find((e) => e.id === p.etapa)?.nome}</em>}
+                  </span>
                 </div>
-                {p.etapa && <span className="tag">{ETAPAS.find((e) => e.id === p.etapa)?.nome}</span>}
                 <BotaoWhats telefone={p.telefone} texto={`Oi ${primeiroNome(p.nome)}! Que alegria ter você com a gente na ${igreja?.nome ?? 'igreja'}. Volte sempre, conte com a gente!`} />
               </Link>
             </li>

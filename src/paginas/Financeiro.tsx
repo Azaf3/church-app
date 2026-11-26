@@ -303,10 +303,10 @@ export default function Financeiro() {
             <div className="tabela-rolar">
               <table className="tabela-livro">
                 <thead>
-                  <tr><th>Data</th><th className="esq">Descrição</th><th className="esq col-tipo">Tipo</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr>
+                  <tr><th>Data</th><th className="esq">Descrição</th><th className="esq col-tipo">Tipo</th><th className="col-ent">Entrada</th><th className="col-sai">Saída</th><th className="col-valor">Valor</th><th>Saldo</th></tr>
                 </thead>
                 <tbody>
-                  <tr className="linha-saldo"><td /><td className="esq" colSpan={2}>Saldo anterior</td><td /><td /><td>{num(saldoAnterior)}</td></tr>
+                  <tr className="linha-saldo"><td /><td className="esq">Saldo anterior</td><td className="col-tipo" /><td className="col-ent" /><td className="col-sai" /><td className="col-valor" /><td>{num(saldoAnterior)}</td></tr>
                   {livro.map(({ l, saldo }) => (
                     <tr key={l.id} onClick={() => (fechado ? setFechando('reabrir') : setEditando(l))} className="clicavel">
                       <td>{dataBR(l.data).slice(0, 5)}</td>
@@ -319,15 +319,17 @@ export default function Financeiro() {
                         {ehSaldoInicial(l) ? 'Saldo inicial' : ehSaida(l) ? (l.categoria || OUTRAS) : ORIGENS[origemDe(l)]}
                         {visao === 'tudo' && (l.fundo ?? 'geral') !== 'geral' && <em className="tag-fundo"> · {FUNDOS[l.fundo]}</em>}
                       </td>
-                      <td className="pos">{ehSaida(l) ? '' : num(Number(l.valor))}</td>
-                      <td className="neg">{ehSaida(l) ? num(Number(l.valor)) : ''}</td>
+                      <td className="pos col-ent">{ehSaida(l) ? '' : num(Number(l.valor))}</td>
+                      <td className="neg col-sai">{ehSaida(l) ? num(Number(l.valor)) : ''}</td>
+                      {/* no celular entrada e saída viram uma coluna só, com sinal, pra caber o saldo */}
+                      <td className={'col-valor ' + (ehSaida(l) ? 'neg' : 'pos')}>{(ehSaida(l) ? '−' : '+') + num(Number(l.valor))}</td>
                       <td className={saldo < 0 ? 'neg' : ''}>{livroFiltrado ? '' : num(saldo)}</td>
                     </tr>
                   ))}
-                  {livro.length === 0 && <tr><td colSpan={6} className="vazio">Nenhum lançamento neste mês ainda.</td></tr>}
+                  {livro.length === 0 && <tr><td colSpan={7} className="vazio">Nenhum lançamento neste mês ainda.</td></tr>}
                 </tbody>
                 <tfoot>
-                  <tr><td /><td className="esq" colSpan={2}>Total do mês</td><td className="pos">{num(contas.totEnt)}</td><td className="neg">{num(contas.totSai)}</td><td>{num(contas.saldo)}</td></tr>
+                  <tr><td /><td className="esq">Total do mês</td><td className="col-tipo" /><td className="pos col-ent">{num(contas.totEnt)}</td><td className="neg col-sai">{num(contas.totSai)}</td><td className={'col-valor ' + (resultado < 0 ? 'neg' : 'pos')}>{(resultado < 0 ? '−' : '+') + num(Math.abs(resultado))}</td><td>{num(contas.saldo)}</td></tr>
                 </tfoot>
               </table>
             </div>

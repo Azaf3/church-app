@@ -1153,3 +1153,14 @@ body.fv-pausa .fv-onda, body.fv-pausa .fv-luz, body.fv-pausa .fv-brilho { animat
 .ou::before, .ou::after { background: rgba(20, 61, 50, .16); }
 @media (max-width: 699px) { .lista-topo { flex-wrap: wrap; } .acoes-livro { flex-wrap: wrap; } }
 .pagina { min-width: 0; }
+/* livro-caixa: no PC, entrada e saída separadas; no celular, uma coluna "Valor" com sinal + saldo, sem arrastar pro lado */
+.tabela-livro .col-valor { display: none; }
+@media (max-width: 699px) {
+  .tabela-livro .col-ent, .tabela-livro .col-sai { display: none; }
+  .tabela-livro .col-valor { display: table-cell; }
+  .tabela-livro td.desc { min-width: 0; }
+  .tabela-livro th:first-child, .tabela-livro td:first-child { padding-left: 2px; }
+  .tabela-livro th:last-child, .tabela-livro td:last-child { padding-right: 2px; }
+}
+/* etapa do visitante na linha de baixo, pra não cortar o nome */
+.tag-linha { margin-left: 6px; font-style: normal; font-size: 11px; vertical-align: 1px; white-space: nowrap; }
