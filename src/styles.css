@@ -1111,3 +1111,43 @@ a.numero:hover .ic-redondo { transform: scale(1.12) rotate(-6deg); }
 }
 /* cartões colados numa faixa: em vez de levantar, acendem */
 .numeros a.numero:hover { transform: none; box-shadow: none; background: #f3f8f0; }
+
+/* ---------- fundo vivo (login e, bem apagado, atrás do sistema) ---------- */
+.fundo-vivo { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; contain: strict; }
+.fv-onda, .fv-luz, .fv-brilho { will-change: transform; }
+.fv-brilho { position: absolute; width: 900px; height: 900px; left: 40%; top: 35%; margin: -450px 0 0 -450px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(95, 174, 104, .22), transparent 65%); animation: fvBrilho 16s ease-in-out infinite alternate; }
+.fv-faixa { position: absolute; left: 0; width: 100%; height: 240px; }
+.fv-cima { top: 3%; transform: scaleY(-1); opacity: .6; }
+.fv-baixo { bottom: -30px; }
+.fv-onda { position: absolute; left: 0; top: 0; width: 200%; height: 100%; animation: fvCorre 30s linear infinite; }
+.fv-onda.o2 { animation-duration: 42s; top: 18px; }
+.fv-onda.o3 { animation-duration: 26s; }
+.fv-onda.o4 { animation-duration: 38s; animation-direction: reverse; top: 26px; }
+.fv-onda.o5 { animation-duration: 32s; top: 10px; }
+.fv-luz { position: absolute; bottom: -30px; width: 10px; height: 10px; border-radius: 50%; opacity: 0;
+  background: radial-gradient(circle, rgba(63,154,82,.9), rgba(63,154,82,0) 70%); animation: fvSobe 17s linear infinite; }
+.fv-luz.l1 { left: 10%; } .fv-luz.l2 { left: 26%; animation-delay: -5s; animation-duration: 20s; width: 14px; height: 14px; }
+.fv-luz.l3 { left: 44%; animation-delay: -10s; background: radial-gradient(circle, rgba(212,170,70,.9), rgba(212,170,70,0) 70%); }
+.fv-luz.l4 { left: 62%; animation-delay: -2.5s; animation-duration: 22s; width: 12px; height: 12px; }
+.fv-luz.l5 { left: 78%; animation-delay: -8s; width: 16px; height: 16px; }
+.fv-luz.l6 { left: 90%; animation-delay: -13s; animation-duration: 19s; background: radial-gradient(circle, rgba(212,170,70,.9), rgba(212,170,70,0) 70%); }
+.fv-luz.l7 { left: 5%; animation-delay: -15s; animation-duration: 24s; width: 8px; height: 8px; }
+@keyframes fvCorre { to { transform: translateX(-50%); } }
+@keyframes fvBrilho { from { transform: translate(-14%, -8%) scale(.9); } to { transform: translate(14%, 10%) scale(1.1); } }
+@keyframes fvSobe {
+  0% { transform: translate(0, 0); opacity: 0; } 10% { opacity: .8; }
+  50% { transform: translate(36px, -55vh); } 85% { opacity: .5; }
+  100% { transform: translate(-18px, -110vh); opacity: 0; }
+}
+/* dentro do sistema: bem mais apagado, sem brilho andando */
+.fv-app { opacity: .55; }
+.fv-app .fv-brilho { animation: none; opacity: .6; }
+.fv-app .fv-faixa { height: 170px; }
+body.fv-pausa .fv-onda, body.fv-pausa .fv-luz, body.fv-pausa .fv-brilho { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .fv-onda { animation-duration: 70s !important; } .fv-brilho { animation: none; } .fv-luz { display: none; }
+}
+@media print { .fundo-vivo { display: none; } }
+.app, .entrada { isolation: isolate; }
+.ou::before, .ou::after { background: rgba(20, 61, 50, .16); }

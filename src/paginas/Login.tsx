@@ -1,3 +1,4 @@
+import FundoVivo from '../componentes/FundoVivo'
 import { useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { APP_ICONE, APP_NOME, APP_SIGLA } from '../config'
@@ -36,6 +37,7 @@ export default function Login() {
 
   return (
     <div className="entrada">
+      <FundoVivo modo="login" />
       <div className="entrada-cartao">
         <img className="entrada-logo" src={import.meta.env.BASE_URL + APP_ICONE} alt=""
           onError={(e) => { e.currentTarget.style.display = 'none' }} />
