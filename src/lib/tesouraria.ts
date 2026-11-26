@@ -3,23 +3,23 @@ import { normalizar } from './importar'
 import type { Lancamento } from './tipos'
 
 export const ENTRADAS = { dizimo: 'Dízimo', oferta: 'Oferta', outro: 'Outra entrada' } as const
+// "de onde veio": mensalidade do SETE (outra entrada no caixa do SETE) aparece separada
+export const ORIGENS = { dizimo: 'Dízimo(s)', oferta: 'Oferta(s)', outro: 'Outras entrada(s)', sete: 'SETE (mensalidades)' } as const
+export type Origem = keyof typeof ORIGENS
+export const origemDe = (l: Pick<Lancamento, 'tipo' | 'fundo'>): Origem =>
+  l.tipo === 'outro' && l.fundo === 'sete' ? 'sete' : (l.tipo as Origem)
 export const FORMAS = { pix: 'Pix', dinheiro: 'Dinheiro', cartao: 'Cartão', transferencia: 'Transferência' } as const
 
+// "pra onde foi": a ordem importa (FGTM fala de prebenda; aluguel do espaço SETE é aluguel)
 export const CATEGORIAS: { nome: string; padrao: RegExp }[] = [
-  { nome: 'Água, luz e internet', padrao: /agua|luz|energia|caesb|neoenergia|enel|ceb|internet|telefone|celular|net\b|vivo|claro|tim\b|oi\b/ },
-  { nome: 'Aluguel', padrao: /aluguel|locacao|condominio|salas/ },
-  { nome: 'Prebenda e ajudas', padrao: /prebenda|fgtm|salario|ajuda de custo|antecipac|auxilio|obreiro|diaria|honorario|combustivel/ },
-  { nome: 'Manutenção e reforma', padrao: /manutenc|reforma|conserto|pintura|eletric|encanad|obra|material de constru/ },
-  { nome: 'Limpeza e copa', padrao: /limpeza|produto|descartave|copa|cafe|agua mineral|galao/ },
-  { nome: 'Sustento missionário', padrao: /miss(ao|oes)|missionar|pr\.? gilson|vem viver/ },
-  { nome: 'Professores e aulas', padrao: /professor|aula|hora.?aula/ },
-  { nome: 'Material e apostilas', padrao: /apostila|material|revista|livro/ },
-  { nome: 'Ação social', padrao: /social|cesta|doacao|ajuda a|benefic|enfermo/ },
-  { nome: 'Eventos e ministérios', padrao: /evento|congresso|retiro|culto especial|louvor|jovens|crianca|ebd|ministerio|lanche/ },
-  { nome: 'Equipamentos e som', padrao: /som|equipamento|microfone|instrumento|cabo|projetor|cadeira|ventilador|ar condicionado/ },
-  { nome: 'Taxas e impostos', padrao: /taxa|tarifa|imposto|iptu|banco|cartorio|contador/ },
+  { nome: 'Prebenda pastoral', padrao: /^(?!.*fgtm).*(prebenda|antecipac)/ },
+  { nome: 'FGTM', padrao: /fgtm/ },
+  { nome: 'Aluguéis', padrao: /aluguel|alugueis|locacao|condominio/ },
+  { nome: 'Oferta Missionária', padrao: /miss(ao|oes)|missionar|gilson|vem viver/ },
+  { nome: 'SETE (aulas/apostilas)', padrao: /\bsete\b|seminario|apostila|aula|professor/ },
+  { nome: 'Neoenergia, água e Internet', padrao: /neoenergia|energia|enel|\bceb\b|caesb|\bagua\b(?! mineral)|internet|\bluz\b/ },
 ]
-export const OUTRAS = 'Outras despesas'
+export const OUTRAS = 'Outros'
 export const NOMES_CATEGORIAS = [...CATEGORIAS.map((c) => c.nome), OUTRAS]
 
 export function adivinharCategoria(...textos: (string | null | undefined)[]) {

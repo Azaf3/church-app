@@ -309,6 +309,7 @@ export default function ImportarFinanceiro() {
                   <div className="linha-fin-info">
                     <div className="linha-fin-topo">
                       <span className="hora">{l.data ? dataBR(l.data) : 'sem data'}</span>
+                      {l.problemas.length > 0 && <small className="aviso-linha">{l.problemas.join(' · ')}</small>}
                       <select className="sel-fundo" value={l.fundo} onChange={(e) => ajustar(l.n, { fundo: e.target.value as Fundo })}>
                         {(Object.keys(FUNDOS) as Fundo[]).map((f) => <option key={f} value={f}>{FUNDOS[f]}</option>)}
                       </select>

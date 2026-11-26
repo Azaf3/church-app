@@ -5,7 +5,7 @@ export default function TesAbas() {
   const itens: [string, string][] = [
     ['/financeiro', 'Mês'],
     ['/financeiro/ano', 'Ano'],
-    ['/financeiro/relacao', 'Dizimistas'],
+    ['/financeiro/relacao', 'Dizimistas/Ofertantes'],
     ['/financeiro/campanhas', 'Campanhas'],
   ]
   return (

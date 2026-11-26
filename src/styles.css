@@ -1041,3 +1041,5 @@ body {
   .numeros .numero.com-icone strong, .tesouraria .numero strong.valor { font-size: 19px; }
   .subtitulo { font-size: 14px; }
 }
+
+.aviso-linha { color: #a5631a; background: #fdf3e4; border-radius: 6px; padding: 1px 6px; font-size: 12px; }

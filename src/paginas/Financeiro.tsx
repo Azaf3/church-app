@@ -5,7 +5,7 @@ import { buscarTudo } from '../lib/buscarTudo'
 import { useSessao } from '../lib/sessao'
 import type { Contribuinte, Fechamento, Lancamento, Pessoa } from '../lib/tipos'
 import { MESES, dataBR, dinheiro, hojeISO, podeFinanceiro } from '../lib/util'
-import { ENTRADAS, FORMAS, FUNDOS, NOMES_CATEGORIAS, OUTRAS, adivinharCategoria, ehEntrada, ehSaida, ehSaldoInicial, mesCurto, mesesAte, somar, type Fundo } from '../lib/tesouraria'
+import { ENTRADAS, ORIGENS, origemDe, type Origem, FORMAS, FUNDOS, NOMES_CATEGORIAS, OUTRAS, adivinharCategoria, ehEntrada, ehSaida, ehSaldoInicial, mesCurto, mesesAte, somar, type Fundo } from '../lib/tesouraria'
 import Folha from '../componentes/Folha'
 import Icone from '../componentes/Icone'
 import TesAbas from '../componentes/TesAbas'
@@ -76,7 +76,7 @@ export default function Financeiro() {
     const porCategoria = Object.entries(sai.reduce<Record<string, number>>((acc, l) => {
       const c = l.categoria || OUTRAS; acc[c] = (acc[c] ?? 0) + Number(l.valor); return acc
     }, {})).sort((a, b) => b[1] - a[1])
-    const porTipo = (['dizimo', 'oferta', 'outro'] as const).map((t) => ({ t, v: somar(ent.filter((l) => l.tipo === t)) }))
+    const porTipo = (Object.keys(ORIGENS) as Origem[]).map((t) => ({ t, v: somar(ent.filter((l) => origemDe(l) === t)) }))
     const dizimistas = new Set(ent.filter((l) => l.tipo === 'dizimo').map((l) => l.contribuinte_id ?? l.pessoa_id ?? l.nome)).size
     return { doMes, ent, sai, saldo, meses, porCategoria, porTipo, dizimistas, totEnt: somar(ent), totSai: somar(sai) }
   }, [todos, mes, visao, saldos])
@@ -218,7 +218,7 @@ export default function Financeiro() {
               <i className="ic-redondo"><Icone nome="seta_cima" tam={20} /></i>
               <span>Entradas do mês</span>
               <strong className="valor pos">{dinheiro(contas.totEnt)}</strong>
-              <small>dízimos {dinheiro(contas.porTipo[0].v)} · ofertas {dinheiro(contas.porTipo[1].v)}{contas.porTipo[2].v > 0 ? ` · outras ${dinheiro(contas.porTipo[2].v)}` : ''}</small>
+              <small>dízimos {dinheiro(contas.porTipo[0].v)} · ofertas {dinheiro(contas.porTipo[1].v)}{contas.porTipo[3].v > 0 ? ` · SETE ${dinheiro(contas.porTipo[3].v)}` : ''}{contas.porTipo[2].v > 0 ? ` · outras ${dinheiro(contas.porTipo[2].v)}` : ''}</small>
             </div>
             <div className="numero com-icone">
               <i className="ic-redondo neg"><Icone nome="seta_baixo" tam={20} /></i>
@@ -260,7 +260,7 @@ export default function Financeiro() {
               <div className="barras">
                 {contas.porTipo.filter(({ v }) => v > 0).map(({ t, v }) => (
                   <div key={t} className="barra-linha">
-                    <span>{ENTRADAS[t]}</span>
+                    <span>{ORIGENS[t]}</span>
                     <i><b style={{ width: `${contas.totEnt ? (v / contas.totEnt) * 100 : 0}%` }} /></i>
                     <strong className="valor-curto">{dinheiro(v)}</strong>
                   </div>
@@ -309,10 +309,10 @@ export default function Financeiro() {
                       <td className="esq desc">
                         {ehSaldoInicial(l) ? (l.descricao || 'Saldo inicial') : ehSaida(l) ? (l.descricao || l.nome || l.categoria || 'Saída') : (nomeDe(l) || l.descricao || 'Entrada')}
                         {l.campanha && <em className="tag-fundo"> · {l.campanha}</em>}
-                        <small className="tipo-cel">{ehSaldoInicial(l) ? 'Saldo inicial' : ehSaida(l) ? (l.categoria || OUTRAS) : ENTRADAS[l.tipo as keyof typeof ENTRADAS]}</small>
+                        <small className="tipo-cel">{ehSaldoInicial(l) ? 'Saldo inicial' : ehSaida(l) ? (l.categoria || OUTRAS) : ORIGENS[origemDe(l)]}</small>
                       </td>
                       <td className="esq tipo col-tipo">
-                        {ehSaldoInicial(l) ? 'Saldo inicial' : ehSaida(l) ? (l.categoria || OUTRAS) : ENTRADAS[l.tipo as keyof typeof ENTRADAS]}
+                        {ehSaldoInicial(l) ? 'Saldo inicial' : ehSaida(l) ? (l.categoria || OUTRAS) : ORIGENS[origemDe(l)]}
                         {visao === 'tudo' && (l.fundo ?? 'geral') !== 'geral' && <em className="tag-fundo"> · {FUNDOS[l.fundo]}</em>}
                       </td>
                       <td className="pos">{ehSaida(l) ? '' : num(Number(l.valor))}</td>

@@ -40,13 +40,14 @@ export default function TesAno() {
       const x = ls.filter((l) => l.data.startsWith(ym))
       const diz = somar(x.filter((l) => l.tipo === 'dizimo'))
       const ofe = somar(x.filter((l) => l.tipo === 'oferta'))
-      const out = somar(x.filter((l) => l.tipo === 'outro'))
+      const set = somar(x.filter((l) => l.tipo === 'outro' && l.fundo === 'sete'))
+      const out = somar(x.filter((l) => l.tipo === 'outro')) - set
       const sai = somar(x.filter(ehSaida))
       const ini = somar(x.filter((l) => l.tipo === 'saldo_inicial'))
-      return { ym, diz, ofe, out, arr: diz + ofe, ent: diz + ofe + out, sai, res: diz + ofe + out - sai, fim: saldoAntes(ym) + ini + diz + ofe + out - sai, tem: x.length > 0 }
+      return { ym, diz, ofe, out, set, arr: diz + ofe, ent: diz + ofe + out + set, sai, res: diz + ofe + out + set - sai, fim: saldoAntes(ym) + ini + diz + ofe + out + set - sai, tem: x.length > 0 }
     })
     const comDado = meses.filter((m) => m.tem)
-    const tot = (k: 'diz' | 'ofe' | 'out' | 'arr' | 'ent' | 'sai' | 'res') => meses.reduce((s, m) => s + m[k], 0)
+    const tot = (k: 'diz' | 'ofe' | 'out' | 'set' | 'arr' | 'ent' | 'sai' | 'res') => meses.reduce((s, m) => s + m[k], 0)
     const doAno = ls.filter((l) => l.data.startsWith(String(ano)))
     const porCategoria = Object.entries(doAno.filter(ehSaida).reduce<Record<string, number>>((acc, l) => {
       const c = l.categoria || OUTRAS; acc[c] = (acc[c] ?? 0) + Number(l.valor); return acc
@@ -60,10 +61,11 @@ export default function TesAno() {
   const maior = Math.max(1, ...r.meses.flatMap((m) => [m.ent, m.sai]))
   const maiorCat = Math.max(1, ...r.porCategoria.map((c) => c[1]))
   const linhasTabela: [string, (m: (typeof r.meses)[number]) => number, string?][] = [
-    ['Dízimos', (m) => m.diz],
-    ['Ofertas', (m) => m.ofe],
+    ['Dízimo(s)', (m) => m.diz],
+    ['Oferta(s)', (m) => m.ofe],
     ['Arrecadação (dízimos + ofertas)', (m) => m.arr, 'forte'],
-    ['Outras entradas', (m) => m.out],
+    ['SETE (mensalidades)', (m) => m.set],
+    ['Outras entrada(s)', (m) => m.out],
     ['Total de entradas', (m) => m.ent, 'forte'],
     ['Despesas', (m) => m.sai, 'neg'],
     ['Resultado do mês', (m) => m.res, 'res'],
@@ -93,7 +95,7 @@ export default function TesAno() {
       <div className="numeros cinco">
         <div className="numero"><span>Dízimos em {ano}</span><strong className="valor">{dinheiro(r.tot('diz'))}</strong><small>média {dinheiro(r.tot('diz') / r.n)}/mês</small></div>
         <div className="numero"><span>Ofertas</span><strong className="valor">{dinheiro(r.tot('ofe'))}</strong><small>média {dinheiro(r.tot('ofe') / r.n)}/mês</small></div>
-        <div className="numero"><span>Outras entradas</span><strong className="valor">{dinheiro(r.tot('out'))}</strong><small>SETE, devoluções, etc.</small></div>
+        <div className="numero"><span>SETE e outras</span><strong className="valor">{dinheiro(r.tot('set') + r.tot('out'))}</strong><small>SETE {dinheiro(r.tot('set'))} · outras {dinheiro(r.tot('out'))}</small></div>
         <div className="numero"><span>Despesas</span><strong className="valor neg">{dinheiro(r.tot('sai'))}</strong><small>média {dinheiro(r.tot('sai') / r.n)}/mês</small></div>
         <div className="numero saldo-caixa"><span>Saldo atual</span><strong className="valor">{dinheiro(r.ultimo?.fim ?? 0)}</strong><small>{r.ultimo ? `no fim de ${MES3[Number(r.ultimo.ym.slice(5)) - 1]}` : 'sem lançamentos'}</small></div>
       </div>
@@ -102,10 +104,10 @@ export default function TesAno() {
         <h2>Mês a mês</h2>
         <div className="grafico-ano">
           {r.meses.map((m, i) => (
-            <div key={m.ym} className="ga-mes" title={`${MES3[i]}: dízimos ${dinheiro(m.diz)}, ofertas ${dinheiro(m.ofe)}, outras ${dinheiro(m.out)}, despesas ${dinheiro(m.sai)}`}>
+            <div key={m.ym} className="ga-mes" title={`${MES3[i]}: dízimos ${dinheiro(m.diz)}, ofertas ${dinheiro(m.ofe)}, SETE e outras ${dinheiro(m.out + m.set)}, despesas ${dinheiro(m.sai)}`}>
               <div className="ga-barras">
                 <div className="ga-pilha" style={{ height: `${(m.ent / maior) * 100}%` }}>
-                  <i className="ga-out" style={{ flexGrow: m.out }} />
+                  <i className="ga-out" style={{ flexGrow: m.out + m.set }} />
                   <i className="ga-ofe" style={{ flexGrow: m.ofe }} />
                   <i className="ga-diz" style={{ flexGrow: m.diz }} />
                 </div>
@@ -117,7 +119,7 @@ export default function TesAno() {
         </div>
         <div className="legenda">
           <span><i className="ga-diz" /> Dízimos</span><span><i className="ga-ofe" /> Ofertas</span>
-          <span><i className="ga-out" /> Outras entradas</span><span><i className="ga-sai" /> Despesas</span>
+          <span><i className="ga-out" /> SETE e outras entradas</span><span><i className="ga-sai" /> Despesas</span>
         </div>
       </section>
 

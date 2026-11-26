@@ -83,8 +83,9 @@ const lancamentos: Linha[] = [
   { id: 'lo2', igreja_id: IG, tipo: 'oferta', valor: 388, data: dia(-9), pessoa_id: null, nome: 'Oferta do culto', forma: 'dinheiro', criado_por: CARLOS, criado_em: agora() },
   { id: 'lo3', igreja_id: IG, tipo: 'oferta', valor: 50, data: dia(-4), pessoa_id: null, nome: 'Missões', forma: 'pix', criado_por: CARLOS, criado_em: agora() },
   ...([
-    [-3, 189.9, 'Água, luz e internet', 'Conta de luz'], [-5, 850, 'Aluguel', 'Aluguel do salão'], [-8, 120, 'Limpeza e copa', 'Produtos de limpeza'],
-    [-12, 300, 'Prebenda e ajudas', 'Ajuda de custo do obreiro'], [-15, 95.5, 'Água, luz e internet', 'Internet'], [-20, 210, 'Manutenção e reforma', 'Conserto do ventilador'],
+    [-3, 189.9, 'Neoenergia, água e Internet', 'Neoenergia'], [-5, 850, 'Aluguéis', 'Aluguel do salão'], [-8, 120, 'Outros', 'Produtos de limpeza'],
+    [-12, 3200, 'Prebenda pastoral', 'Prebenda pastoral'], [-12, 256, 'FGTM', 'FGTM (8% prebenda pastoral)'], [-15, 95.5, 'Neoenergia, água e Internet', 'Internet'],
+    [-18, 500, 'Oferta Missionária', 'Missões (missionário)'], [-20, 210, 'Outros', 'Conserto do ventilador'],
   ] as [number, number, string, string][]).map(([d, v, c, desc], i) => ({
     id: 's' + i, igreja_id: IG, tipo: 'saida', valor: v, data: dia(d), pessoa_id: null, nome: null, categoria: c, descricao: desc, forma: 'pix', criado_por: CARLOS, criado_em: agora(),
   })),
@@ -92,7 +93,7 @@ const lancamentos: Linha[] = [
   ...[1, 2, 3, 4, 5].flatMap((k) => [
     { id: `h${k}e`, igreja_id: IG, tipo: 'dizimo', valor: 2400 + k * 130, data: dia(-30 * k - 2), pessoa_id: null, nome: 'Dízimos do mês', forma: 'pix', criado_por: CARLOS, criado_em: agora() },
     { id: `h${k}o`, igreja_id: IG, tipo: 'oferta', valor: 700 + k * 40, data: dia(-30 * k - 3), pessoa_id: null, nome: 'Ofertas do mês', forma: 'dinheiro', criado_por: CARLOS, criado_em: agora() },
-    { id: `h${k}s`, igreja_id: IG, tipo: 'saida', valor: 1900 + (k % 3) * 400, data: dia(-30 * k - 5), pessoa_id: null, nome: null, categoria: 'Aluguel', descricao: 'Despesas do mês', forma: 'pix', criado_por: CARLOS, criado_em: agora() },
+    { id: `h${k}s`, igreja_id: IG, tipo: 'saida', valor: 1900 + (k % 3) * 400, data: dia(-30 * k - 5), pessoa_id: null, nome: null, categoria: 'Aluguéis', descricao: 'Despesas do mês', forma: 'pix', criado_por: CARLOS, criado_em: agora() },
   ]),
 ]
 
@@ -100,7 +101,7 @@ const lancamentos: Linha[] = [
 lancamentos.push(
   { id: 'cp1', igreja_id: IG, tipo: 'oferta', valor: 1250, data: dia(-25), pessoa_id: null, nome: null, descricao: 'Oferta especial', campanha: 'Reforma do telhado', forma: 'pix', criado_por: CARLOS, criado_em: agora() },
   { id: 'cp2', igreja_id: IG, tipo: 'oferta', valor: 840, data: dia(-11), pessoa_id: null, nome: null, descricao: 'Bazar', campanha: 'Reforma do telhado', forma: 'dinheiro', criado_por: CARLOS, criado_em: agora() },
-  { id: 'cp3', igreja_id: IG, tipo: 'saida', valor: 1600, data: dia(-6), pessoa_id: null, nome: null, categoria: 'Manutenção e reforma', descricao: 'Telhas e calhas', campanha: 'Reforma do telhado', forma: 'pix', criado_por: CARLOS, criado_em: agora() },
+  { id: 'cp3', igreja_id: IG, tipo: 'saida', valor: 1600, data: dia(-6), pessoa_id: null, nome: null, categoria: 'Outros', descricao: 'Telhas e calhas', campanha: 'Reforma do telhado', forma: 'pix', criado_por: CARLOS, criado_em: agora() },
 )
 
 // relação de dizimistas/ofertantes (código anonimizado, como na planilha)

@@ -220,6 +220,25 @@ export function saldoAnterior(t: Tabela, linhaCab: number): number | null {
   return null
 }
 
+// aba de um mês só (ex.: "Jun26") com uma data de outro mês no meio: quase sempre é erro de digitação
+// (07/07 em vez de 07/06). Traz pro mês da aba e avisa.
+export function corrigirMesForaDaAba(linhas: LinhaFin[]) {
+  const meses: Record<string, number> = {}
+  for (const l of linhas) if (l.data) meses[l.data.slice(0, 7)] = (meses[l.data.slice(0, 7)] ?? 0) + 1
+  const [mes, qtd] = Object.entries(meses).sort((a, b) => b[1] - a[1])[0] ?? []
+  const total = Object.values(meses).reduce((a, b) => a + b, 0)
+  if (!mes || qtd < 5 || qtd / total < 0.8) return
+  const [a, m] = mes.split('-').map(Number)
+  const ultimoDia = new Date(a, m, 0).getDate()
+  for (const l of linhas) {
+    if (!l.data || l.data.startsWith(mes)) continue
+    const dia = Math.min(Number(l.data.slice(8, 10)), ultimoDia)
+    const nova = `${mes}-${String(dia).padStart(2, '0')}`
+    l.problemas.push(`data ${l.data.split('-').reverse().join('/')} fora do mês da aba: ficou ${nova.split('-').reverse().join('/')}`)
+    l.data = nova
+  }
+}
+
 // lê todas as abas que parecem livro-caixa (data + valor) de uma vez
 export function lerTodasAbas(
   abas: { aba: string; tabela: Tabela }[], pessoas: PessoaRef[], anoPadrao: number,
@@ -231,6 +250,7 @@ export function lerTodasAbas(
       ? montarLinhas(a.tabela, c.linha, c.mapa, pessoas, { anoPadrao, tipoPadrao: 'auto', formaPadrao: 'dinheiro' })
         .map((l) => ({ ...l, aba: a.aba, n: l.n + abas.indexOf(a) * 100000 }))
       : []
+    corrigirMesForaDaAba(linhas)
     const datas = linhas.map((l) => l.data).filter(Boolean).sort() as string[]
     return { aba: a.aba, linhas, primeira: datas[0] ?? null, saldo: ok ? saldoAnterior(a.tabela, c.linha) : null }
   }).filter((a) => a.linhas.some((l) => l.data))
