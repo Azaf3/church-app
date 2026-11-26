@@ -18,6 +18,9 @@ const FECHAMENTO_ATIVO = false
 type Filtro = 'tudo' | 'entradas' | 'saidas'
 type Visao = 'tudo' | Fundo
 
+// saldo separado por caixa (Tudo / Caixa geral / Missões / SETE): o tesoureiro pediu pra esconder
+const MOSTRAR_CAIXAS = false
+
 export default function Financeiro() {
   const { igreja, papel, userId, equipe } = useSessao()
   const [params] = useSearchParams()
@@ -142,7 +145,7 @@ export default function Financeiro() {
         </section>
       ) : (
         <>
-          <div className="caixas sem-impressao">
+          {MOSTRAR_CAIXAS && <div className="caixas sem-impressao">
             {(['tudo', 'geral', 'missoes', 'sete'] as Visao[]).map((v) => (
               <button key={v} className={'caixa-aba' + (visao === v ? ' ativa' : '')} onClick={() => setVisao(v)}>
                 <i className="ic-redondo"><Icone nome={({ tudo: 'carteira', geral: 'moedas', missoes: 'missao', sete: 'capelo' } as const)[v]} tam={20} /></i>
@@ -152,7 +155,7 @@ export default function Financeiro() {
                 </div>
               </button>
             ))}
-          </div>
+          </div>}
           {visao === 'sete' && (
             <Link className="atalho-sete sem-impressao" to="/sete"><Icone nome="pessoas" tam={18} /> Controle de alunos e mensalidades do SETE <Icone nome="seta" tam={16} /></Link>
           )}

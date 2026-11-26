@@ -11,6 +11,8 @@ type Visao = 'tudo' | Fundo
 const MES3 = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
 // visão do ano: igual ao resumo da planilha (dízimos, ofertas, despesas, saldo), mês a mês e em gráfico
+const MOSTRAR_CAIXAS = false // escondido a pedido do tesoureiro
+
 export default function TesAno() {
   const { igreja, papel } = useSessao()
   const [todos, setTodos] = useState<Lancamento[] | null>(null)
@@ -86,11 +88,11 @@ export default function TesAno() {
       <TesAbas />
       <p className="so-impressao">{igreja?.nome} · Tesouraria · Resumo de {ano}{visao !== 'tudo' ? ` · ${FUNDOS[visao]}` : ''}</p>
 
-      <div className="seg sem-impressao">
+      {MOSTRAR_CAIXAS && <div className="seg sem-impressao">
         {(['tudo', 'geral', 'missoes', 'sete'] as Visao[]).map((v) => (
           <button key={v} className={visao === v ? 'ativo' : ''} onClick={() => setVisao(v)}>{v === 'tudo' ? 'Todos os caixas' : FUNDOS[v]}</button>
         ))}
-      </div>
+      </div>}
 
       <div className="numeros cinco">
         <div className="numero"><span>Dízimos em {ano}</span><strong className="valor">{dinheiro(r.tot('diz'))}</strong><small>média {dinheiro(r.tot('diz') / r.n)}/mês</small></div>
