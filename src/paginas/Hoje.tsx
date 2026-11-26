@@ -121,23 +121,27 @@ export default function Hoje() {
       )}
 
       <div className="numeros">
-        <Link to="/pessoas" className="numero">
+        <Link to="/pessoas" className="numero com-icone">
+          <i className="ic-redondo"><Icone nome="pessoas" tam={20} /></i>
           <span>Membros</span>
           <strong>{contagem.membros}</strong>
           <small>{contagem.novosMes > 0 && contagem.novosMes < contagem.membros ? `+${contagem.novosMes} novos este mês` : 'ativos na igreja'}</small>
         </Link>
-        <Link to="/jornada" className="numero">
+        <Link to="/jornada" className="numero com-icone">
+          <i className="ic-redondo"><Icone nome="jornada" tam={20} /></i>
           <span>Visitantes</span>
           <strong>{contagem.visitantes}</strong>
           <small>em acompanhamento</small>
         </Link>
-        <Link to="/aniversariantes" className="numero">
+        <Link to="/aniversariantes" className="numero com-icone">
+          <i className="ic-redondo"><Icone nome="bolo" tam={20} /></i>
           <span>Aniversários</span>
           <strong>{aniversarios.length}</strong>
           <small>nos próximos 7 dias</small>
         </Link>
         {fin && (
-          <Link to="/financeiro" className="numero">
+          <Link to="/financeiro" className="numero com-icone">
+          <i className="ic-redondo"><Icone nome="dinheiro" tam={20} /></i>
             <span>Entradas do mês</span>
             <strong className="valor">{dinheiro(entradasMes ?? 0)}</strong>
             <small>dízimos e ofertas</small>

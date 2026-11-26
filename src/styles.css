@@ -929,3 +929,115 @@ details.painel[open] summary { margin-bottom: 10px; }
   .secretaria .docs { display: block; }
   @page { margin: 22mm 20mm; }
 }
+
+/* =========================================================
+   v4 — referência do Israel: sans pesada, cartões com sombra
+   suave e ícones redondos, menu ativo em degradê verde
+   ========================================================= */
+:root {
+  --titulo: 'Figtree', system-ui, sans-serif;
+  --fundo: #eef2ee;
+  --linha: #e1e8e2;
+  --sombra-card: 0 1px 2px rgba(16, 45, 30, .05), 0 8px 22px rgba(16, 45, 30, .06);
+  --verde-vivo: #3f9a52;
+}
+body {
+  background:
+    radial-gradient(900px 420px at 100% -80px, rgba(132, 190, 132, .28), transparent 70%),
+    radial-gradient(700px 380px at -10% 110%, rgba(132, 190, 132, .12), transparent 70%),
+    var(--fundo);
+  background-attachment: fixed;
+}
+
+/* títulos e números: Figtree bem pesada */
+.titulo { font-family: var(--titulo); font-weight: 800; letter-spacing: -.025em; color: var(--verde-escuro); }
+@media (min-width: 900px) { .titulo { font-size: 38px; } }
+.subtitulo { margin: 2px 0 0; color: var(--suave); font-size: 15px; }
+.cabecalho { align-items: flex-start; }
+.painel > h2, .lista-topo h2, details.painel summary h2 { font-family: var(--titulo); font-weight: 800; font-size: 18px; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+.painel > h2 svg, .lista-topo h2 svg { color: var(--verde-vivo); flex: none; }
+.painel h2.sub { display: flex; align-items: center; gap: 8px; font-family: var(--titulo); font-weight: 800; font-size: 18px; color: var(--verde-escuro); }
+.painel h2.sub svg { color: var(--verde-vivo); }
+.numero strong, .caixa-aba strong { font-family: var(--titulo); font-weight: 800; letter-spacing: -.015em; }
+.capa .titulo { font-weight: 800; letter-spacing: -.03em; }
+.documento, .documento h1, .documento header strong { font-family: 'Literata', Georgia, serif; }
+
+/* cartões: borda clarinha + sombra suave */
+.painel, .quadro-hoje, .colunas, .config, .lista:not(.plana):not(.agrupada), .lista.agrupada { box-shadow: var(--sombra-card); border-color: var(--linha); }
+.painel { border-radius: 18px; }
+.numeros { box-shadow: var(--sombra-card); border-color: var(--linha); border-radius: 18px; }
+.btn { box-shadow: 0 1px 2px rgba(16, 45, 30, .06); }
+.btn-primario { background: var(--verde-escuro); border-color: var(--verde-escuro); }
+.btn-primario:hover { background: #163f2b; }
+.btn-saida { background: #fdeeeb; color: #c4482f; border-color: #f4cdc5; }
+.btn-saida:hover { background: #fbe2dc; border-color: #eeb6aa; }
+.btn svg { flex: none; }
+
+/* ícone redondo dos cartões */
+.ic-redondo { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: #e5f1e7; color: var(--verde-vivo); flex: none; font-style: normal; }
+.ic-redondo.neg { background: #fbe7e2; color: #cc5a3f; }
+.numero.com-icone { grid-template-columns: 42px minmax(0, 1fr); column-gap: 14px; align-content: start; }
+.numero.com-icone > .ic-redondo { grid-row: 1 / span 3; align-self: start; margin-top: 2px; }
+.numero.com-icone > :not(.ic-redondo) { grid-column: 2; }
+.tesouraria .numeros .numero.saldo-caixa .ic-redondo { background: rgba(255, 255, 255, .12); color: #f2c46d; }
+.tesouraria .numeros .numero.saldo-caixa { background: linear-gradient(140deg, #1f5a3a, #143d2b); }
+
+/* caixas: cartões separados com ícone */
+.caixas { gap: 12px; background: none; border: none; border-radius: 0; overflow: visible; }
+.caixas .caixa-aba { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--linha); border-radius: 16px; background: var(--papel); box-shadow: var(--sombra-card); }
+.caixas .caixa-aba > div { display: grid; min-width: 0; }
+.caixas .caixa-aba strong { font-size: 19px; }
+.caixas .caixa-aba.ativa { background: var(--papel); border: 1.5px solid var(--verde-escuro); box-shadow: 0 10px 26px rgba(20, 61, 50, .12); }
+@media (max-width: 600px) { .caixas .caixa-aba { padding: 10px 12px; gap: 8px; } .caixas .ic-redondo { width: 34px; height: 34px; } .caixas .caixa-aba strong { font-size: 15px; } }
+
+/* meses: pílulas brancas com sombra */
+.meses-chips button { border-color: var(--linha); box-shadow: 0 1px 2px rgba(16, 45, 30, .06); }
+.meses-chips button.ativo { background: var(--verde-escuro); box-shadow: 0 6px 14px rgba(20, 61, 50, .22); }
+
+/* gráfico + "de onde veio": dois cartões da mesma altura */
+.cartoes-par { display: grid; gap: 16px; margin-bottom: 16px; align-items: stretch; }
+.cartoes-par > .painel { margin: 0; }
+@media (min-width: 900px) { .cartoes-par { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); } }
+.grafico-eixo { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; }
+.eixo-y { display: flex; flex-direction: column; justify-content: space-between; height: 190px; padding: 6px 0 28px; box-sizing: border-box; font-size: 11.5px; color: var(--suave); text-align: right; font-variant-numeric: tabular-nums; }
+.eixo-y span { line-height: 0; }
+.grafico-eixo .grafico-meses {
+  background-image: repeating-linear-gradient(to bottom, #e9eeea 0 1px, transparent 1px 100%);
+  background-size: 100% calc((100% - 34px) / 5);
+  background-position: 0 6px;
+  background-repeat: repeat-y;
+}
+.grafico-eixo .grafico-meses { background-clip: content-box; padding-bottom: 0; }
+.gm-barras i { border-radius: 6px 6px 0 0; }
+.gm-ent { background: var(--verde-vivo) !important; }
+.gm-sai { background: #e9a08f !important; }
+.gm-mes.atual { background: #eef4ef; }
+.barra-linha i b { border-radius: 99px; }
+
+/* livro-caixa */
+.livro .lista-topo h2 svg { color: var(--verde-escuro); }
+.busca { padding-left: 38px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%235c6863' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 13px 50%; }
+
+/* menu lateral: maior, item ativo em degradê verde */
+@media (min-width: 900px) {
+  .app { grid-template-columns: 264px minmax(0, 1fr); }
+  .lateral { padding: 22px 14px; }
+  .lateral-igreja { gap: 14px; padding: 4px 8px 20px; }
+  .lateral-igreja strong { font-family: var(--titulo); font-weight: 700; font-size: 17px; }
+  .lateral-igreja img, .lateral-igreja .logo-igreja { box-shadow: 0 0 0 3px rgba(255, 255, 255, .9); border-radius: 50%; }
+  .lateral-titulo { font-size: 13px; color: rgba(255, 255, 255, .55); padding-left: 12px; }
+  .lateral-item { font-size: 15.5px; padding: 10px 14px; gap: 13px; border-radius: 12px; color: rgba(255, 255, 255, .86); }
+  .lateral-item:hover { background: rgba(255, 255, 255, .07); }
+  .lateral-item.ativo { background: linear-gradient(90deg, #5fae68, #3d8a4d); color: #fff; box-shadow: 0 6px 16px rgba(0, 0, 0, .18); }
+  .lateral-item.ativo svg { color: #fff; }
+}
+.gm-barras i { width: 40%; max-width: 26px; }
+.numeros .numero.com-icone strong { font-size: clamp(22px, 2.6vw, 28px); }
+@media (max-width: 699px) {
+  .numero.com-icone { grid-template-columns: minmax(0, 1fr); row-gap: 2px; padding: 14px; }
+  .numero.com-icone > .ic-redondo { grid-row: auto; width: 32px; height: 32px; margin: 0 0 6px; }
+  .numero.com-icone > .ic-redondo svg { width: 17px; height: 17px; }
+  .numero.com-icone > :not(.ic-redondo) { grid-column: 1; }
+  .numeros .numero.com-icone strong, .tesouraria .numero strong.valor { font-size: 19px; }
+  .subtitulo { font-size: 14px; }
+}

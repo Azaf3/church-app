@@ -25,6 +25,18 @@ const caminhos: Record<string, string> = {
   pasta: 'M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 10h18',
   documento: 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7',
   megafone: 'M4 10v4h3l7 4V6L7 10zM18 9a4 4 0 0 1 0 6',
+  carteira: 'M4 7a2 2 0 0 1 2-2h11v4M4 7v11a2 2 0 0 0 2 2h14V9H6a2 2 0 0 1-2-2zM16 14.5h.01',
+  moedas: 'M12 4c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3zM4 7v5c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12v5c0 1.7 3.6 3 8 3s8-1.3 8-3v-5',
+  missao: 'M12 21s-7-5.4-7-11a7 7 0 0 1 14 0c0 5.6-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
+  capelo: 'M2 9l10-5 10 5-10 5zM6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5M22 9v6',
+  seta_cima: 'M12 19V5M5 12l7-7 7 7',
+  seta_baixo: 'M12 5v14M19 12l-7 7-7-7',
+  calculadora: 'M5 3h14v18H5zM8 7h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 18.5h.01M12 18.5h.01M16 18.5h.01',
+  barras: 'M5 20V12M10 20V6M15 20v-9M20 20V9',
+  pizza: 'M12 3a9 9 0 1 0 9 9h-9zM15 3.5A9 9 0 0 1 20.5 9H15z',
+  etiqueta: 'M3 12V4h8l10 10-8 8zM7.5 8.5h.01',
+  imprimir: 'M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z',
+  menos: 'M5 12h14',
 }
 
 export default function Icone({ nome, tam = 22 }: { nome: keyof typeof caminhos | string; tam?: number }) {

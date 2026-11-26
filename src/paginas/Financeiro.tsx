@@ -93,6 +93,9 @@ export default function Financeiro() {
   const novoContribuinte = (c: Contribuinte) => setContribuintes((xs) => (xs.some((x) => x.id === c.id) ? xs : [...xs, c]))
   const resultado = contas.totEnt - contas.totSai
   const maiorMes = Math.max(1, ...contas.meses.flatMap((x) => [x.ent, x.sai]))
+  // topo do eixo: número "redondo" acima do maior mês
+  const passo = Math.pow(10, Math.floor(Math.log10(maiorMes / 5)))
+  const escala = Math.ceil(maiorMes / 5 / passo) * passo * 5
   const maiorCat = Math.max(1, ...contas.porCategoria.map((c) => c[1]))
   const t = busca.trim().toLowerCase()
   const lista = contas.doMes
@@ -118,11 +121,14 @@ export default function Financeiro() {
   return (
     <div className="tesouraria">
       <div className="cabecalho">
-        <h1 className="titulo">Tesouraria</h1>
+        <div>
+          <h1 className="titulo">Tesouraria</h1>
+          <p className="subtitulo">Gestão financeira da igreja com entradas, saídas e relatórios.</p>
+        </div>
         <div className="acoes-topo sem-impressao">
           <Link className="btn" to="/financeiro/importar"><Icone nome="importar" tam={18} /> Trazer planilha</Link>
-          <button className="btn btn-saida" onClick={() => setNovo('saida')}>− Saída</button>
-          <button className="btn btn-primario" onClick={() => setNovo('entrada')}>+ Entrada</button>
+          <button className="btn btn-saida" onClick={() => setNovo('saida')}><Icone nome="menos" tam={18} /> Saída</button>
+          <button className="btn btn-primario" onClick={() => setNovo('entrada')}><Icone nome="mais_um" tam={18} /> Entrada</button>
         </div>
       </div>
       <TesAbas />
@@ -139,8 +145,11 @@ export default function Financeiro() {
           <div className="caixas sem-impressao">
             {(['tudo', 'geral', 'missoes', 'sete'] as Visao[]).map((v) => (
               <button key={v} className={'caixa-aba' + (visao === v ? ' ativa' : '')} onClick={() => setVisao(v)}>
-                <span>{v === 'tudo' ? 'Tudo' : FUNDOS[v]}</span>
-                <strong className={saldos[v] < 0 ? 'neg' : ''}>{dinheiro(saldos[v])}</strong>
+                <i className="ic-redondo"><Icone nome={({ tudo: 'carteira', geral: 'moedas', missoes: 'missao', sete: 'capelo' } as const)[v]} tam={20} /></i>
+                <div>
+                  <span>{v === 'tudo' ? 'Tudo' : FUNDOS[v]}</span>
+                  <strong className={saldos[v] < 0 ? 'neg' : ''}>{dinheiro(saldos[v])}</strong>
+                </div>
               </button>
             ))}
           </div>
@@ -199,47 +208,54 @@ export default function Financeiro() {
           <p className="so-impressao">{igreja?.nome} · Tesouraria{visao !== 'tudo' ? ` · ${FUNDOS[visao]}` : ''} · {MESES[m - 1]} de {a}</p>
 
           <div className="numeros">
-            <div className="numero saldo-caixa">
+            <div className="numero saldo-caixa com-icone">
+              <i className="ic-redondo"><Icone nome="carteira" tam={22} /></i>
               <span>{visao === 'tudo' ? 'Saldo em caixa' : `Saldo · ${FUNDOS[visao]}`}</span>
               <strong className="valor">{dinheiro(contas.saldo)}</strong>
               <small>tudo que entrou menos tudo que saiu até {MESES[m - 1].toLowerCase()}</small>
             </div>
-            <div className="numero">
+            <div className="numero com-icone">
+              <i className="ic-redondo"><Icone nome="seta_cima" tam={20} /></i>
               <span>Entradas do mês</span>
               <strong className="valor pos">{dinheiro(contas.totEnt)}</strong>
               <small>dízimos {dinheiro(contas.porTipo[0].v)} · ofertas {dinheiro(contas.porTipo[1].v)}{contas.porTipo[2].v > 0 ? ` · outras ${dinheiro(contas.porTipo[2].v)}` : ''}</small>
             </div>
-            <div className="numero">
+            <div className="numero com-icone">
+              <i className="ic-redondo neg"><Icone nome="seta_baixo" tam={20} /></i>
               <span>Saídas do mês</span>
               <strong className="valor neg">{dinheiro(contas.totSai)}</strong>
               <small>{contas.sai.length} {contas.sai.length === 1 ? "lançamento" : "lançamentos"}</small>
             </div>
-            <div className="numero">
+            <div className="numero com-icone">
+              <i className="ic-redondo"><Icone nome="calculadora" tam={20} /></i>
               <span>Resultado do mês</span>
               <strong className={'valor ' + (resultado >= 0 ? 'pos' : 'neg')}>{resultado >= 0 ? '+' : '−'} {dinheiro(Math.abs(resultado))}</strong>
               <small>{resultado >= 0 ? 'sobrou' : 'gastou mais do que entrou'}</small>
             </div>
           </div>
 
-          <div className="quadro-hoje quadro-tes">
+          <div className="cartoes-par">
             <section className="painel">
-              <h2>Últimos 6 meses</h2>
+              <h2><Icone nome="barras" tam={20} /> Últimos 6 meses</h2>
+              <div className="grafico-eixo">
+              <div className="eixo-y">{[5, 4, 3, 2, 1, 0].map((k) => <span key={k}>{(Math.round(escala * k / 5)).toLocaleString('pt-BR')}</span>)}</div>
               <div className="grafico-meses">
                 {contas.meses.map((x) => (
                   <button key={x.m} className={'gm-mes' + (x.m === mes ? ' atual' : '')} onClick={() => setMes(x.m)} title={`${mesCurto(x.m)}: entradas ${dinheiro(x.ent)}, saídas ${dinheiro(x.sai)}`}>
                     <div className="gm-barras">
-                      <i className="gm-ent" style={{ height: `${(x.ent / maiorMes) * 100}%` }} />
-                      <i className="gm-sai" style={{ height: `${(x.sai / maiorMes) * 100}%` }} />
+                      <i className="gm-ent" style={{ height: `${(x.ent / escala) * 100}%` }} />
+                      <i className="gm-sai" style={{ height: `${(x.sai / escala) * 100}%` }} />
                     </div>
                     <span>{mesCurto(x.m)}</span>
                   </button>
                 ))}
               </div>
+              </div>
               <div className="legenda"><span><i className="gm-ent" /> Entradas</span><span><i className="gm-sai" /> Saídas</span></div>
             </section>
 
             <section className="painel">
-              <h2>De onde veio</h2>
+              <h2><Icone nome="pizza" tam={20} /> De onde veio</h2>
               {contas.totEnt === 0 && <p className="vazio">Nenhuma entrada neste mês.</p>}
               <div className="barras">
                 {contas.porTipo.filter(({ v }) => v > 0).map(({ t, v }) => (
@@ -250,7 +266,7 @@ export default function Financeiro() {
                   </div>
                 ))}
               </div>
-              <h2 className="sub">Pra onde foi</h2>
+              <h2 className="sub"><Icone nome="etiqueta" tam={20} /> Pra onde foi</h2>
               {contas.porCategoria.length === 0 && <p className="vazio">Nenhuma saída neste mês.</p>}
               <div className="barras saidas">
                 {contas.porCategoria.map(([c, v]) => (
@@ -266,10 +282,10 @@ export default function Financeiro() {
 
           <section className="painel livro">
             <div className="lista-topo">
-              <h2>Livro-caixa de {MESES[m - 1].toLowerCase()}{visao !== 'tudo' ? ` · ${FUNDOS[visao]}` : ''}</h2>
+              <h2><Icone nome="livro" tam={22} /> Livro-caixa de {MESES[m - 1].toLowerCase()}{visao !== 'tudo' ? ` · ${FUNDOS[visao]}` : ''}</h2>
               <div className="acoes-livro sem-impressao">
-                {!fechado && <button className="btn btn-mini" onClick={() => setFixasAberta(true)}>Despesas fixas</button>}
-                <button className="btn btn-mini" onClick={() => window.print()}>Imprimir / PDF</button>
+                {!fechado && <button className="btn btn-mini" onClick={() => setFixasAberta(true)}><Icone nome="agenda" tam={16} /> Despesas fixas</button>}
+                <button className="btn btn-mini" onClick={() => window.print()}><Icone nome="imprimir" tam={16} /> Imprimir / PDF</button>
               </div>
             </div>
             <div className="lista-filtros sem-impressao">
